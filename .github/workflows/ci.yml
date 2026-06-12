@@ -23,18 +23,22 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      # Install ONLY the SDK package and its (pure-JS) deps. The example apps
+      # (Expo/Next) pull platform-native binaries and are integration references
+      # validated at M8 — they are deliberately out of the M1 SDK gate.
+      - name: Install (@sbtc/sdk only)
+        run: pnpm install --frozen-lockfile --filter @sbtc/sdk
 
       # Pipeline order per TASKS.md T005: typecheck → lint → test → coverage → size-check.
+      # turbo --filter scopes to core and no-ops tasks core doesn't define yet (e.g. tests).
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm exec turbo run typecheck --filter=@sbtc/sdk
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm exec turbo run lint --filter=@sbtc/sdk
 
       - name: Test (with coverage)
-        run: pnpm test:coverage
+        run: pnpm exec turbo run test:coverage --filter=@sbtc/sdk
 
       - name: Bundle size
-        run: pnpm size-check
+        run: pnpm exec turbo run size-check --filter=@sbtc/sdk
