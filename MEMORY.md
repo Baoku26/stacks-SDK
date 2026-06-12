@@ -134,6 +134,25 @@ Status: active
 
 ---
 
+## [ERRORS] errors.ts — the single SbtcError type (T008)
+
+Date: 2026-06-12
+Platform: both
+Status: active
+
+---
+
+`src/errors.ts` exports `SbtcErrorCode` (string enum, 17 members = PRD §9.3 exactly) and `SbtcError extends Error` (shape per PRD §11.2: `code`, `message`, `originalError?: unknown`, `context?: Record<string, unknown>`, `platform?`). Constructor takes an options object: `new SbtcError({ code, message?, originalError?, context?, platform? })`. If `message` is omitted, a default from a total `Record<SbtcErrorCode, string>` is used — the totality means adding a code without a message is a compile error.
+
+Key decisions / gotchas:
+- **Doc conflict resolved:** PRD §7.4 (FR-4.1) names `BIOMETRIC_FAILED` / `BIOMETRIC_UNAVAILABLE` for native auth, but the authoritative §9.3 table (and T015's auth-guard) use `AUTH_FAILED` / `AUTH_UNAVAILABLE`. Implemented the §9.3 names. The native auth adapter (T026) must throw `AUTH_FAILED` / `AUTH_UNAVAILABLE`, NOT the BIOMETRIC_* names.
+- **Always use the enum member**, never the raw string — the lint config + CLAUDE.md require it. (Some PLANNING/MEMORY snippets show `new SbtcError({ code: 'SSR_NOT_SUPPORTED' })` with a raw string; that is illustrative and would NOT typecheck. Write `SbtcErrorCode.SSR_NOT_SUPPORTED`.)
+- **`Object.setPrototypeOf(this, SbtcError.prototype)` is required** — without it `instanceof SbtcError` breaks once esbuild/tsup down-levels the class or it runs on Hermes (RN). Verified at runtime against the built CJS bundle: `instanceof Error` and `instanceof SbtcError` both true through throw/catch.
+- `SbtcErrorOptions` and `DEFAULT_MESSAGES` are NOT exported (barrel exposes only `SbtcError` + `SbtcErrorCode`, per §9.1). `Error.captureStackTrace` is accessed via a narrow interface cast (no `any`, satisfies the lint rule).
+- `DOCS_URL` constant currently points at the repo README; update it to the Nextra docs site at M9 (used by the POLYFILL_NOT_INITIALIZED message per FR-1.6).
+
+---
+
 ## [ADAPTERS] The adapter rule — hooks never call platform APIs directly
 
 Date: 2026-06-11
@@ -213,6 +232,33 @@ Do not remove these assertions — they are the guard against accidental cross-p
 
 ---
 
+## [POLYFILLS] Entry design + apply-functions + vitest setup (T012)
+
+Date: 2026-06-12
+Platform: native
+Status: active
+
+---
+
+**SUPERSEDES the "runs on import / side-effect module" wording in the T009/T010/T011 memos.** The three polyfill modules now EXPORT idempotent functions (`applyBufferPolyfill`, `applyCryptoPolyfill`, `applyStreamsPolyfill`) instead of mutating globals at import time.
+
+WHY the refactor: `polyfills/index.ts` must be a true no-op on web (FR-2.3), but a bare `import './buffer'` runs the module's side effects regardless of any `if (window)` guard in the entry (ESM evaluates imported modules before the importer's body). Worse, `crypto.ts`'s `new Crypto()` (@peculiar) is Node-`crypto`-backed and can THROW in a browser bundle. So the side-effecting work lives in exported functions, and the entry calls them only off the browser path:
+
+```ts
+if (typeof window === 'undefined') {       // browser → no-op; native/Node → apply
+  applyBufferPolyfill(); applyCryptoPolyfill(); applyStreamsPolyfill();
+}
+export { applyBufferPolyfill, applyCryptoPolyfill, applyStreamsPolyfill };
+```
+
+`applyCryptoPolyfill` also early-returns when `crypto.subtle` already exists, so @peculiar is instantiated ONLY when actually needed (never on a browser, even if called). The `typeof window === 'undefined'` guard is correct because RN-native has no `window` (the same reason detect.ts needs `Platform.OS` first is the Expo-Web case, not RN-native).
+
+**Build externalization (important):** tsup auto-externalizes `dependencies`, so `buffer` / `@peculiar/webcrypto` / `react-native-get-random-values` are left as `import`/`require` in the published `polyfills.mjs` (636 B) — the consumer's bundler (Metro) resolves them. Consequence: `bundlesize` on `dist/polyfills.mjs` measures only our glue, NOT @peculiar's transitive weight, so the 80 kB "native polyfill bundle" budget is effectively unmeasured for the externalized deps. Revisit if real polyfill payload needs gating (would need a bundled-size measurement). The earlier worry about @peculiar blowing the 80 kB budget is therefore moot for the published package.
+
+**Vitest setup (first tests in the repo):** `packages/core/vitest.config.ts`, `environment: 'node'` (simulates native — no `window`), `include: src/**/*.test.ts`, v8 coverage. Scripts: `test` (`vitest run`), `test:watch`, `test:coverage`. CI's `test:coverage` step now actually runs tests. Web/SSR suites opt into jsdom per-file via `// @vitest-environment jsdom` (jsdom not yet installed — add at M3). `react-native-get-random-values` must be `vi.mock`'d in any test that loads crypto.ts (it needs RN NativeModules, absent under Node). `src/polyfills/index.test.ts` passes 4/4.
+
+---
+
 ## [POLYFILLS] Import order is strict and non-negotiable (native only)
 
 Date: 2026-06-11
@@ -236,6 +282,61 @@ import '@sbtc/sdk/polyfills'; // too late
 ```
 
 On web, `@sbtc/sdk/polyfills` is a no-op — the browser already has all these globals. It is safe but unnecessary to import it in web apps.
+
+---
+
+## [POLYFILLS] buffer.ts impl + the no-@types/node rule (T009)
+
+Date: 2026-06-12
+Platform: native
+Status: active
+
+---
+
+`src/polyfills/buffer.ts` sets `globalThis.Buffer` (from the `buffer` npm pkg, a runtime `dependency`) and `globalThis.process` (a minimal inline shim: `env`, `nextTick`, `browser`, `version`, `platform`). Idempotent via `typeof … === 'undefined'` guards; for `process` it also backfills `env`/`nextTick` onto React Native's partial `process` without clobbering. Runtime-verified (assign-if-missing, `Buffer.from`, idempotent re-import).
+
+**Deliberate decision — do NOT add `@types/node` to `packages/core`.** It would put Node globals (`Buffer`, `process`, `global`, `setImmediate`, `__dirname`) into scope across the WHOLE SDK and silently mask platform-correctness bugs (a hook using a Node-only API would typecheck but fail on web/native). Instead:
+- `buffer` ships its own `index.d.ts` → `import { Buffer } from 'buffer'` is typed with zero extra deps.
+- `process` is an inline shim with a local `ProcessShim` interface — avoids the untyped `process` package (which needs `@types/node`) entirely.
+- Globals are assigned via a narrow `globalThis as PolyfilledGlobal` cast, no `any`.
+
+T010 (crypto.ts) should follow the same rule: type `@peculiar/webcrypto` / `react-native-get-random-values` via their own d.ts + narrow casts, not `@types/node`.
+
+The `buffer`/`process` shims are bundled INTO the polyfills entry (not in tsup `external`), keeping `@sbtc/sdk/polyfills` self-contained for Metro. The web no-op is the entry's job (T012), not buffer.ts's — this file is loaded only on native.
+
+---
+
+## [POLYFILLS] crypto.ts impl + @peculiar-on-Hermes risk (T010)
+
+Date: 2026-06-12
+Platform: native
+Status: active
+
+---
+
+`src/polyfills/crypto.ts` composes two libs (both runtime `dependencies`):
+1. `import 'react-native-get-random-values'` — installs a native, secure `crypto.getRandomValues` (Hermes has none). Ships NO types → declared as an untyped side-effect module in `src/polyfills/shims.d.ts` (keeps the no-`@types/node` rule).
+2. `@peculiar/webcrypto` (`new Crypto()`) — provides `crypto.subtle`.
+
+**Composition is deliberate, not the MEMORY-snippet's `Object.assign`:** we KEEP rn-get-random-values' native `getRandomValues` and only add `subtle` (via `Object.defineProperty` when `crypto.subtle` is undefined). @peculiar's own RNG is not the secure native source, and `Object.assign(global.crypto, new Crypto())` wouldn't copy `subtle`/`getRandomValues` anyway (they're prototype members/getters, not own-enumerable). Idempotent: if `subtle` already exists (web, or a second import) it's a no-op. Global written via a narrow `globalThis as unknown as CryptoHost` cast (lib.dom's `crypto` is readonly; no `any`).
+
+**RISK to validate at M2 / T033 (Expo Go):** `@peculiar/webcrypto`'s `subtle` is implemented on top of Node's `crypto` module. On Hermes there is no `node:crypto`, so `crypto.subtle` operations may throw at runtime even though everything typechecks. If that happens, swap the subtle source (candidates: `expo-crypto`, or a pure-JS WebCrypto) — only `crypto.ts` changes. Could NOT smoke-test in Node here because the rn-get-random-values import needs RN's NativeModules.
+
+**Also check at T012:** `@peculiar/webcrypto` is sizeable; once the polyfills entry actually imports crypto.ts, re-run `size-check` against the 80 kB gzip polyfill budget. If over, that budget (or the lib) is a decision to surface.
+
+---
+
+## [POLYFILLS] streams.ts is a Metro-alias doc, not a runtime polyfill (T011)
+
+Date: 2026-06-12
+Platform: native
+Status: active
+
+---
+
+`src/polyfills/streams.ts` does NOT set a global — Node `stream` support on RN can't be fixed at runtime (transitive `require('stream')` is resolved by the bundler, not via `globalThis`). The fix is a Metro resolver alias `stream → require.resolve('readable-stream')`, which ships in `packages/core/templates/metro.config.js` (T013). `readable-stream` was added as a runtime `dependency` so the alias target resolves with no extra consumer install. The module itself only sets an idempotent flag (`__sbtcSdkStreamsPolyfilled`) to keep the buffer→crypto→streams chain's contract consistent; verified it's a no-op on re-import. On web the entry never evaluates it.
+
+T013 must wire exactly that alias in the metro template and document it in the getting-started guide (it's a common RN setup failure, second only to polyfill import order).
 
 ---
 

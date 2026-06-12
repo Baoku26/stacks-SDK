@@ -65,7 +65,7 @@ Source of truth for what gets built and in what order. Update status as you work
 
 ### ERRORS
 
-- [ ] **T008** — Implement `src/errors.ts`
+- [x] **T008** — Implement `src/errors.ts`
   - `SbtcErrorCode` enum: all 17 codes from PRD §9.3
   - `SbtcError` class: `code`, `message`, `originalError?`, `context?`, `platform?`
   - Export from `src/index.ts`
@@ -74,16 +74,16 @@ Source of truth for what gets built and in what order. Update status as you work
 
 ### POLYFILLS
 
-- [ ] **T009** — Implement `src/polyfills/buffer.ts`
+- [x] **T009** — Implement `src/polyfills/buffer.ts`
   - Sets `global.Buffer` and `global.process`. Idempotent guard.
 
-- [ ] **T010** — Implement `src/polyfills/crypto.ts`
+- [x] **T010** — Implement `src/polyfills/crypto.ts`
   - Imports `react-native-get-random-values`, assigns `@peculiar/webcrypto` to `global.crypto`. Idempotent.
 
-- [ ] **T011** — Implement `src/polyfills/streams.ts`
+- [x] **T011** — Implement `src/polyfills/streams.ts`
   - Documents Metro alias requirement. Idempotent.
 
-- [ ] **T012** — Implement `src/polyfills/index.ts`
+- [x] **T012** — Implement `src/polyfills/index.ts`
   - Imports buffer → crypto → streams in order.
   - On web (`typeof window !== 'undefined'`): early return, no-op.
   - Unit test: after import on simulated native env, all globals defined.
@@ -127,7 +127,6 @@ Source of truth for what gets built and in what order. Update status as you work
 ---
 
 ### PROVIDER
-
 - [ ] **T020** — Implement `src/provider/types.ts`
   - `NetworkMode`, `ApiConfig`, `SbtcProviderProps`, `SbtcContextValue`
   - `SbtcContextValue` includes: `network`, `adapter`, `apiConfig` (resolved URLs)
