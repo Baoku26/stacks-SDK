@@ -5,7 +5,7 @@ export default defineConfig({
     // Default to a Node-like environment (simulates native: no `window`/`document`).
     // Web/SSR-sensitive suites opt into jsdom per-file via `// @vitest-environment jsdom`.
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

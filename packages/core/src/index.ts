@@ -24,3 +24,8 @@ export { withAuthGuard } from './adapters/auth-guard';
 // `SsrAdapter` are intentionally NOT exported — they are internal to SbtcProvider.
 export { NativeAdapter } from './adapters/native';
 export { WebAdapter } from './adapters/web';
+
+// Provider + context (PRD §9.1)
+export { SbtcProvider } from './provider/SbtcProvider';
+export { useSbtcContext } from './provider/context';
+export type { SbtcProviderProps, NetworkMode, SbtcContextValue } from './provider/types';
