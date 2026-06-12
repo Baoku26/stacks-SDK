@@ -1,0 +1,18 @@
+packages:
+  - 'packages/*'
+
+# @sbtc/sdk's native peers (react-native, expo-secure-store, expo-local-authentication)
+# and web peer (@stacks/connect) are optional — do not auto-install them into the
+# core dev install. The example apps install the peers they actually need.
+autoInstallPeers: false
+
+# pnpm 11 blocks dependency install scripts by default; each must be decided here
+# (true = run the script, false = skip it without warning). This is the canonical
+# location in pnpm 11 — values in .npmrc / `ignoredBuiltDependencies` are ignored.
+#   esbuild              — needed by tsup to fetch its native binary (core build).
+#   sharp, unrs-resolver — example-web (Next 16) deps; builds skipped to match
+#                          create-next-app's own default. Not needed for local dev.
+allowBuilds:
+  esbuild: true
+  sharp: false
+  unrs-resolver: false

@@ -1,0 +1,23 @@
+# Build output & deps
+**/dist/**
+**/.next/**
+**/coverage/**
+**/node_modules/**
+**/.expo/**
+
+# Lockfiles & generated
+pnpm-lock.yaml
+**/*.d.ts
+
+# Assets
+**/public/**
+**/assets/**
+
+# Authoritative human-authored docs — formatted by hand, not Prettier (avoid
+# churning tables/prose). See CLAUDE.md → Authoritative Documents.
+CLAUDE.md
+MEMORY.md
+PLANNING.md
+TASKS.md
+sbtc-rn-sdk-prd.md
+sbtc-rn-sdk-structure.md

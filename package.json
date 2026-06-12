@@ -1,0 +1,26 @@
+{
+  "name": "sbtc-sdk-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo for @sbtc/sdk — universal React SDK for sBTC and Stacks (React Native + web).",
+  "license": "MIT",
+  "packageManager": "pnpm@11.1.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "size-check": "turbo run size-check --filter=@sbtc/sdk",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "ci": "pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm size-check"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3"
+  }
+}
