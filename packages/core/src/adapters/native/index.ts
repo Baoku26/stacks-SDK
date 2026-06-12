@@ -1,37 +1,29 @@
 import type { AuthAdapter, ConnectAdapter, PlatformAdapter, StorageAdapter } from '../types';
+import { createNativeStorage } from './storage';
+import { createNativeAuth } from './auth';
+import { createNativeConnect, type NativeConnectOptions } from './connect';
 
-const notImplemented = (): never => {
-  throw new Error('NativeAdapter not yet implemented');
-};
+export type NativeAdapterOptions = NativeConnectOptions;
 
 /**
- * React Native / Expo adapter. STUB for M1 (T017); implemented across M2 —
- * `expo-secure-store` (T025), `expo-local-authentication` (T026), Leather/Xverse
- * deep-links (T027), assembled in T028.
+ * React Native / Expo adapter: `expo-secure-store` storage,
+ * `expo-local-authentication` auth, and Leather/Xverse deep-link connect.
  *
- * BUNDLE SEPARATION (do not regress): the real implementation MUST load its
- * platform packages via dynamic `import()` inside methods, NOT static top-level
- * imports. `detect.ts` references both NativeAdapter and WebAdapter, so a static
- * `import 'expo-secure-store'` here would be pulled into web bundles (where it
- * isn't installed) and break the web build. See MEMORY.md → [ADAPTERS] tree-shaking.
+ * BUNDLE SEPARATION: this file and its sub-adapters never statically import the
+ * expo packages — each method does a dynamic `import()` instead. `detect.ts`
+ * references both NativeAdapter and WebAdapter, so a static `import 'expo-*'`
+ * here would be pulled into web bundles and break them (MEMORY.md → [ADAPTERS]
+ * tree-shaking; verified by `pnpm size-check` not finding expo strings in web).
  */
 export class NativeAdapter implements PlatformAdapter {
   readonly platform = 'native' as const;
+  readonly storage: StorageAdapter;
+  readonly auth: AuthAdapter;
+  readonly connect: ConnectAdapter;
 
-  readonly storage: StorageAdapter = {
-    get: async () => notImplemented(),
-    set: async () => notImplemented(),
-    remove: async () => notImplemented(),
-  };
-
-  readonly auth: AuthAdapter = {
-    isAvailable: async () => notImplemented(),
-    prompt: async () => notImplemented(),
-  };
-
-  readonly connect: ConnectAdapter = {
-    signPsbt: async () => notImplemented(),
-    signStacksTx: async () => notImplemented(),
-    getAvailableWallets: async () => notImplemented(),
-  };
+  constructor(options?: NativeAdapterOptions) {
+    this.storage = createNativeStorage();
+    this.auth = createNativeAuth();
+    this.connect = createNativeConnect(options);
+  }
 }

@@ -60,6 +60,7 @@
   ],
   "peerDependencies": {
     "@stacks/connect": ">=7",
+    "expo-linking": ">=6",
     "expo-local-authentication": ">=14",
     "expo-secure-store": ">=13",
     "react": ">=18",
@@ -75,6 +76,9 @@
     "expo-local-authentication": {
       "optional": true
     },
+    "expo-linking": {
+      "optional": true
+    },
     "@stacks/connect": {
       "optional": true
     }
@@ -86,6 +90,9 @@
     "@vitest/coverage-v8": "^4.1.8",
     "bundlesize2": "^0.0.35",
     "eslint": "^9.17.0",
+    "expo-linking": "^56.0.14",
+    "expo-local-authentication": "^56.0.4",
+    "expo-secure-store": "^56.0.4",
     "globals": "^15.14.0",
     "react": "^18.3.1",
     "react-test-renderer": "^18.3.1",
@@ -96,6 +103,10 @@
   },
   "dependencies": {
     "@peculiar/webcrypto": "^1.7.1",
+    "@scure/base": "^2.2.0",
+    "@scure/btc-signer": "^2.2.0",
+    "@stacks/transactions": "^7.4.0",
+    "@stacks/wallet-sdk": "^7.4.0",
     "buffer": "^6.0.3",
     "react-native-get-random-values": "^2.0.0",
     "readable-stream": "^4.7.0"
