@@ -153,6 +153,36 @@ Key decisions / gotchas:
 
 ---
 
+## [ADAPTERS] types.ts — the PlatformAdapter contract (T014)
+
+Date: 2026-06-12
+Platform: both
+Status: active
+
+---
+
+`src/adapters/types.ts` defines `StorageAdapter`, `AuthAdapter`, `ConnectAdapter`, `PlatformAdapter` (shape exactly per `sbtc-rn-sdk-structure.md`) plus `WalletApp { name, scheme, storeUrl }`. Signing uses `Uint8Array` in/out. `PlatformAdapter.platform` is `'native' | 'web'` (the SSR adapter reports `'web'`).
+
+**Barrel exports all 5 — including `WalletApp` — even though PRD §9.1 lists only the 4 interfaces.** `WalletApp` is transitively public (it's the return element of `ConnectAdapter.getAvailableWallets`), and T014 names it as a deliverable. This is a deliberate §9.1 gap-fill. DO NOT drop `WalletApp` from the barrel during the T024 §9.1 reconciliation — its omission there is an oversight, not intent.
+
+---
+
+## [ADAPTERS] withAuthGuard signature + behaviour (T015)
+
+Date: 2026-06-12
+Platform: both
+Status: active
+
+---
+
+`withAuthGuard<T>(adapter: PlatformAdapter, fn: () => Promise<T>, reason = 'Authenticate to continue'): Promise<T>`.
+
+- Signature follows TASKS T015 (`adapter, fn`) + an optional `reason` (the CLAUDE.md snippet `withAuthGuard(() => …)` with no adapter is illustrative shorthand, not the real signature — hooks pass `useSbtcContext().adapter`).
+- Order: `await adapter.auth.isAvailable()` → if false throw `AUTH_UNAVAILABLE`; then `await adapter.auth.prompt(reason)` → if false throw `AUTH_FAILED`; only then call `fn`. Implements FR-4.4 "if auth fails OR is unavailable, fn must not be called" (T015 only names AUTH_FAILED; the unavailable case + AUTH_UNAVAILABLE come from FR-4.4/§9.3). Errors carry `platform: adapter.platform`.
+- Must wrap every sensitive op at M2+ (`exportMnemonic`, `clearWallet`, `signPsbt`, `signStacksTx`) per SR-3. Tested with a mock adapter (success, AUTH_FAILED + fn-not-called, AUTH_UNAVAILABLE + no-prompt, default reason).
+
+---
+
 ## [ADAPTERS] The adapter rule — hooks never call platform APIs directly
 
 Date: 2026-06-11
@@ -174,6 +204,22 @@ const value = await SecureStore.getItemAsync(WALLET_KEY);
 ```
 
 This rule makes every hook testable by swapping the adapter mock in context. It also ensures the native adapter code is never bundled in web builds and vice versa.
+
+---
+
+## [ADAPTERS] detect.ts uses navigator.product, not Platform.OS (T016–T019)
+
+Date: 2026-06-12
+Platform: both
+Status: active
+
+---
+
+`detectAdapter()` (src/adapters/detect.ts) detects React Native via `typeof navigator !== 'undefined' && navigator.product === 'ReactNative'` — NOT `Platform.OS`. Reason: a static `import { Platform } from 'react-native'` would make web bundlers (webpack/Vite/Next) try to resolve `react-native`, which isn't installed on web (optional native peer) → web build error. `navigator.product` is the import-free RN signal and gives the SAME outcomes as the order described in the [Platform detection order] note below: RN → NativeAdapter; Expo Web (browser `navigator.product`, not "ReactNative") → falls through to WebAdapter; browser → WebAdapter; else → SsrAdapter. Tested via `vi.stubGlobal` for all four cases.
+
+Adapter stubs (T017 NativeAdapter, T018 WebAdapter) throw `new Error('<X>Adapter not yet implemented')`; `SsrAdapter` (T019, own file `src/adapters/ssr.ts`) is the real no-op (storage.get→null, set/remove no-op, auth.prompt/connect.* throw `SSR_NOT_SUPPORTED`, getAvailableWallets→[], platform `'web'`). Barrel exports `NativeAdapter` + `WebAdapter` (§9.1); `detectAdapter` and `SsrAdapter` stay internal.
+
+**CRITICAL for M2/M3 — bundle separation:** `detect.ts` statically imports BOTH NativeAdapter and WebAdapter, so both are in the module graph of anything that uses detection (SbtcProvider). That is fine now (stubs have no platform imports), but when the real adapters land they MUST load platform packages via dynamic `import()` inside methods — `expo-secure-store`/`expo-local-authentication` in NativeAdapter (T025/T026), `@stacks/connect` in WebAdapter (T036). A static top-level `import 'expo-secure-store'` would be dragged into web bundles (and `@stacks/connect` into native), breaking the opposing platform's build. Code comments in both stub files repeat this warning.
 
 ---
 
@@ -336,7 +382,7 @@ Status: active
 
 `src/polyfills/streams.ts` does NOT set a global — Node `stream` support on RN can't be fixed at runtime (transitive `require('stream')` is resolved by the bundler, not via `globalThis`). The fix is a Metro resolver alias `stream → require.resolve('readable-stream')`, which ships in `packages/core/templates/metro.config.js` (T013). `readable-stream` was added as a runtime `dependency` so the alias target resolves with no extra consumer install. The module itself only sets an idempotent flag (`__sbtcSdkStreamsPolyfilled`) to keep the buffer→crypto→streams chain's contract consistent; verified it's a no-op on re-import. On web the entry never evaluates it.
 
-T013 must wire exactly that alias in the metro template and document it in the getting-started guide (it's a common RN setup failure, second only to polyfill import order).
+DONE (T013): `packages/core/templates/metro.config.js` ships the alias (extends `expo/metro-config`, sets `config.resolver.extraNodeModules.stream = require.resolve('readable-stream')`, with a bare-RN variant in comments). It also reminds the consumer to add `import '@sbtc/sdk/polyfills'` first. Still TODO at M9: document this prominently in the getting-started guide (common RN setup failure, second only to polyfill import order). Not yet wired into `example-native` (it doesn't import the SDK until M2).
 
 ---
 

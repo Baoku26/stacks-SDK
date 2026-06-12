@@ -49,6 +49,8 @@ Thumbs.db
 
 # Keep the workspace settings dir, but ignore noisy per-user files if any appear
 .vscode/*.log
+
+
 CLAUDE.md
 MEMORY.md
 PLANNING.md

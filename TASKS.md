@@ -88,40 +88,40 @@ Source of truth for what gets built and in what order. Update status as you work
   - On web (`typeof window !== 'undefined'`): early return, no-op.
   - Unit test: after import on simulated native env, all globals defined.
 
-- [ ] **T013** — Write `packages/core/templates/metro.config.js`
+- [x] **T013** — Write `packages/core/templates/metro.config.js`
 
 ---
 
 ### ADAPTER INTERFACES + DETECTION
 
-- [ ] **T014** — Implement `src/adapters/types.ts`
+- [x] **T014** — Implement `src/adapters/types.ts`
   - `StorageAdapter`, `AuthAdapter`, `ConnectAdapter`, `PlatformAdapter` interfaces
   - `WalletApp` type (name, scheme, storeUrl)
   - Export from `src/index.ts`
 
-- [ ] **T015** — Implement `src/adapters/auth-guard.ts`
+- [x] **T015** — Implement `src/adapters/auth-guard.ts`
   - `withAuthGuard<T>(adapter: PlatformAdapter, fn: () => Promise<T>): Promise<T>`
   - Calls `adapter.auth.prompt()` → if returns false → throw `AUTH_FAILED`
   - Export from `src/index.ts`
 
-- [ ] **T016** — Implement `src/adapters/detect.ts`
+- [x] **T016** — Implement `src/adapters/detect.ts`
   - `detectAdapter(): PlatformAdapter`
   - Native: `Platform.OS !== 'web'` → `new NativeAdapter()`
   - Browser: `typeof window !== 'undefined'` → `new WebAdapter()`
   - SSR fallback: `new SsrAdapter()`
   - Unit test: mock each environment, assert correct adapter returned
 
-- [ ] **T017** — Implement `src/adapters/native/index.ts` (stub)
+- [x] **T017** — Implement `src/adapters/native/index.ts` (stub)
   - `NativeAdapter` class implementing `PlatformAdapter`
   - All methods throw `new Error('NativeAdapter not yet implemented')` for now
   - Mark `platform: 'native'`
 
-- [ ] **T018** — Implement `src/adapters/web/index.ts` (stub)
+- [x] **T018** — Implement `src/adapters/web/index.ts` (stub)
   - `WebAdapter` class implementing `PlatformAdapter`
   - All methods throw `new Error('WebAdapter not yet implemented')` for now
   - Mark `platform: 'web'`
 
-- [ ] **T019** — Implement `SsrAdapter` (inline in `detect.ts` or own file)
+- [x] **T019** — Implement `SsrAdapter` (inline in `detect.ts` or own file)
   - Complete no-op. `storage.get` returns null. `auth.prompt` throws `SSR_NOT_SUPPORTED`. `connect.*` throws `SSR_NOT_SUPPORTED`.
 
 ---
