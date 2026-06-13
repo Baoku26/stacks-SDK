@@ -31,21 +31,27 @@ export { SbtcError, SbtcErrorCode } from './errors';
 
 // ---- Utils (PRD §9.1) ----
 export { MAINNET, TESTNET } from './utils/network';
-// TODO(M4 T043): export { formatSats, formatBtc, satsToBtc, btcToSats } from './utils/format';
-// TODO(M4 T044): export { isValidStxAddress, isValidBtcAddress } from './utils/address';
-// TODO(M4 T045): export { getFeeEstimate } from './utils/fees';
+export { formatSats, formatBtc, satsToBtc, btcToSats } from './utils/format';
+export { isValidStxAddress, isValidBtcAddress } from './utils/address';
+export { getFeeEstimate } from './utils/fees';
+export type { FeeEstimate } from './utils/fees';
 
 // ---- Wallet (PRD §9.1) — M2 ----
 export { useStacksWallet } from './wallet/useStacksWallet';
 export type { WalletState, Account } from './wallet/types';
 
 // ---- sBTC (PRD §9.1) — M4–M6 ----
-// TODO(M4 T048): export { useSbtcBalance } from './sbtc/useSbtcBalance';
-// TODO(M5 T055): export { useSbtcDeposit } from './sbtc/useSbtcDeposit';
-// TODO(M6 T059): export { useSbtcWithdraw } from './sbtc/useSbtcWithdraw';
-// TODO(M5 T054): export type { DepositStatus, WithdrawalStatus } from './sbtc/types';
+export { useSbtcBalance } from './sbtc/useSbtcBalance';
+export type { UseSbtcBalanceResult } from './sbtc/useSbtcBalance';
+export { useSbtcDeposit } from './sbtc/useSbtcDeposit';
+export type { UseSbtcDepositConfig, UseSbtcDepositResult } from './sbtc/useSbtcDeposit';
+export { useSbtcWithdraw } from './sbtc/useSbtcWithdraw';
+export type { UseSbtcWithdrawConfig, UseSbtcWithdrawResult } from './sbtc/useSbtcWithdraw';
+export { DepositStatus, WithdrawalStatus } from './sbtc/types';
 
 // ---- Contracts (PRD §9.1) — M4 / M7 ----
-// TODO(M4 T046): export { useStxBalance } from './contracts/useStxBalance';
-// TODO(M4 T047): export { useNonce } from './contracts/useNonce';
+export { useStxBalance } from './contracts/useStxBalance';
+export type { UseStxBalanceResult } from './contracts/useStxBalance';
+export { useNonce } from './contracts/useNonce';
+export type { UseNonceResult } from './contracts/useNonce';
 // TODO(M7 T063): export { useStacksContract } from './contracts/useStacksContract';

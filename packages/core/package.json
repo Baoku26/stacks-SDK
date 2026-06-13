@@ -64,10 +64,14 @@
     "expo-local-authentication": ">=14",
     "expo-secure-store": ">=13",
     "react": ">=18",
-    "react-native": ">=0.73"
+    "react-native": ">=0.73",
+    "sbtc": ">=0.3"
   },
   "peerDependenciesMeta": {
     "react-native": {
+      "optional": true
+    },
+    "sbtc": {
       "optional": true
     },
     "expo-secure-store": {
@@ -85,6 +89,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@stacks/connect": "^8.2.6",
     "@types/react": "^18.3.12",
     "@types/react-test-renderer": "^18.3.1",
     "@vitest/coverage-v8": "^4.1.8",
@@ -96,6 +101,7 @@
     "globals": "^15.14.0",
     "react": "^18.3.1",
     "react-test-renderer": "^18.3.1",
+    "sbtc": "^0.3.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",

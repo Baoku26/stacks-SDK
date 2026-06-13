@@ -72,7 +72,7 @@ describe('SbtcProvider', () => {
       apiConfig: { hiroApiUrl: 'https://custom.hiro.example' },
     });
     expect(ctx.apiConfig.hiroApiUrl).toBe('https://custom.hiro.example'); // override wins
-    expect(ctx.apiConfig.emilyApiUrl).toBe('https://emily.stacks.co'); // default kept
+    expect(ctx.apiConfig.emilyApiUrl).toBe('https://sbtc-emily.com'); // default kept
     expect(ctx.apiConfig.bitcoinApiUrl).toBe('https://mempool.space/api');
   });
 

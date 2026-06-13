@@ -12,7 +12,13 @@ autoInstallPeers: false
 #   esbuild              — needed by tsup to fetch its native binary (core build).
 #   sharp, unrs-resolver — example-web (Next 16) deps; builds skipped to match
 #                          create-next-app's own default. Not needed for local dev.
+#   @reown/appkit, secp256k1 — transitive deps of @stacks/connect (WalletConnect
+#                          path). Skipped: core mocks @stacks/connect in tests and
+#                          uses @scure/* for crypto, so neither native build is
+#                          needed for build/typecheck/test.
 allowBuilds:
+  '@reown/appkit': false
   esbuild: true
+  secp256k1: false
   sharp: false
   unrs-resolver: false

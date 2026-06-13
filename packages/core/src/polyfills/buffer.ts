@@ -20,7 +20,12 @@ interface ProcessShim {
   platform: string;
 }
 
-type PolyfilledGlobal = typeof globalThis & {
+// `Omit` the two keys before re-declaring them: `@types/node` can leak into the
+// program via a dependency's `/// <reference types="node">` (e.g. @stacks/*),
+// which would type `globalThis.process` as `NodeJS.Process` and reject our RN
+// `platform: 'react-native'` shim. Decoupling from the global declarations keeps
+// this file correct whether or not node types are present.
+type PolyfilledGlobal = Omit<typeof globalThis, 'Buffer' | 'process'> & {
   Buffer?: typeof Buffer;
   process?: ProcessShim;
 };
@@ -32,7 +37,7 @@ const nextTick: ProcessShim['nextTick'] = (callback, ...args) => {
 
 /** Idempotently install `Buffer` and a minimal `process` onto the global object. */
 export function applyBufferPolyfill(): void {
-  const g = globalThis as PolyfilledGlobal;
+  const g = globalThis as unknown as PolyfilledGlobal;
 
   if (typeof g.Buffer === 'undefined') {
     g.Buffer = Buffer;
