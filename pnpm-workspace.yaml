@@ -1,5 +1,6 @@
 packages:
   - 'packages/*'
+  - 'docs'
 
 # @sbtc/sdk's native peers (react-native, expo-secure-store, expo-local-authentication)
 # and web peer (@stacks/connect) are optional — do not auto-install them into the
@@ -22,3 +23,15 @@ allowBuilds:
   secp256k1: false
   sharp: false
   unrs-resolver: false
+
+# Pin the zod that Nextra (docs site) resolves to its declared baseline 4.1.12.
+# Nextra 4.6.1 deps `zod ^4.1.12`, but zod 4.4.x made `z.custom()` reject a
+# missing/undefined object key ("expected nonoptional"); Nextra's <Layout> validates
+# its props WITHOUT `children` against a schema that still declares `children` (a
+# `z.custom`-based `reactNode`), so it throws under 4.4.x. Scoped to the nextra
+# subtrees only — the unrelated zod v3 consumers (@stacks / walletconnect) and any
+# other zod 4 consumers are untouched. (pnpm 11 reads `overrides` here, not in
+# package.json's `pnpm` field.)
+overrides:
+  nextra>zod: 4.1.12
+  nextra-theme-docs>zod: 4.1.12

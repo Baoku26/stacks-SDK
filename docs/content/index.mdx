@@ -1,0 +1,55 @@
+---
+title: Introduction
+---
+
+# @sbtc/sdk
+
+A universal React SDK for **sBTC** and **Stacks** that works on **React Native / Expo** and **React (web)** from a single install. Platform differences — secure storage, biometric auth, wallet connection — are handled by a pluggable adapter system, so your hooks stay platform-agnostic.
+
+```bash
+npm install @sbtc/sdk
+```
+
+## Why
+
+- **One API, both platforms.** The same hooks (`useStacksWallet`, `useSbtcDeposit`, `useSbtcWithdraw`, `useSbtcBalance`, `useStacksContract`, …) run on native and web. The SDK auto-detects the platform and wires the right adapter.
+- **No web bundler config.** The web build contains no `expo-*` / `react-native` references, so there's nothing to alias — install and go.
+- **Native-ready.** Ships first-class polyfills and a Metro config for React Native (Hermes), with keys held in the device's secure enclave.
+- **Typed and tree-shakeable.** Strict TypeScript, explicit hook return types, and per-platform builds keep bundles small.
+
+```tsx
+import { SbtcProvider, useStacksWallet } from '@sbtc/sdk';
+
+function App() {
+  return (
+    <SbtcProvider network="testnet">
+      <Wallet />
+    </SbtcProvider>
+  );
+}
+
+function Wallet() {
+  const { address, generateWallet, isLoading } = useStacksWallet();
+  return <button onClick={generateWallet}>{address ?? 'Generate wallet'}</button>;
+}
+```
+
+## Documentation map
+
+> Scaffold in place — the pages below are being written next.
+
+- **Getting Started** — install, wrap with `SbtcProvider`, first wallet (native + web).
+- **Polyfills** — native-only setup (import order, Metro `stream` alias); the most common RN failure point.
+- **Platform Adapters** — how detection + the adapter system work, and how to supply a custom adapter. (Web needs **no** bundler alias.)
+- **Provider** — `SbtcProvider` props, network selection, and `apiConfig` overrides (incl. `sbtcContractAddress` for tracking testnet redeployments).
+- **Security** — key handling, `withAuthGuard`, HTTPS enforcement, SSR no-op.
+- **Hooks** — reference for `useStacksWallet`, `useSbtcDeposit`, `useSbtcWithdraw`, `useSbtcBalance`, `useStacksContract`.
+- **Examples** — Expo wallet, Next.js DeFi app, contract interaction.
+
+## Supported platforms
+
+| Platform | Storage | Auth | Wallet connect |
+| --- | --- | --- | --- |
+| React Native / Expo | `expo-secure-store` | `expo-local-authentication` | Leather / Xverse deep links |
+| React (web) | `localStorage` + AES-GCM | WebAuthn | `@stacks/connect` |
+| SSR | no-op | no-op | no-op |

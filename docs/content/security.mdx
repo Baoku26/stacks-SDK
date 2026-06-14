@@ -1,0 +1,85 @@
+---
+title: Security
+---
+
+# Security
+
+## Key handling
+
+- **Private keys and mnemonics live in memory only.** They are never written to disk except through the storage adapter's encryption (native: hardware-backed `expo-secure-store`; web: AES-GCM over `localStorage`).
+- The mnemonic is **never placed in React state** — `useStacksWallet` keeps only the derived addresses in state and reads the mnemonic from secure storage on demand.
+- Key material, mnemonics, and private hex are **never** included in any error, log, or `SbtcError.context`.
+
+## `withAuthGuard`
+
+Sensitive operations are wrapped with `withAuthGuard`, which calls the adapter's `auth.prompt()` (biometrics / WebAuthn / passphrase) before running and rejects if the user cancels or fails. It guards:
+
+- `useStacksWallet().exportMnemonic()`
+- `useStacksWallet().clearWallet()`
+- transaction signing (`signPsbt`, `signStacksTx`)
+
+These imperative actions **reject** with an `SbtcError` on auth failure (unlike the hooks' loading actions, which surface errors via an `error` field).
+
+```tsx
+const { exportMnemonic } = useStacksWallet();
+
+try {
+  const mnemonic = await exportMnemonic(); // prompts biometrics/WebAuthn first
+} catch (e) {
+  // e.code === 'AUTH_FAILED' if the user cancelled
+}
+```
+
+## HTTPS only
+
+Every endpoint must be HTTPS. An HTTP URL (in defaults or `apiConfig`) throws `NETWORK_SECURITY_ERROR`.
+
+## SSR is a no-op
+
+During server-side rendering (`typeof window === 'undefined'`), the SDK performs zero storage, auth, or network operations — hooks return their loading/empty state immediately. There is no key access on the server.
+
+## Errors
+
+Hooks never throw — they surface an `SbtcError` via their `error` field. Imperative, auth-guarded actions reject with one. Every `SbtcError` has:
+
+```ts
+class SbtcError extends Error {
+  code: SbtcErrorCode; // stable, machine-readable
+  message: string; // human-readable; never contains secrets
+  originalError?: unknown; // the underlying cause, if any
+  context?: Record<string, unknown>; // non-sensitive (txids, addresses, amounts)
+  platform?: 'native' | 'web';
+}
+```
+
+Branch on `code`, not `message`:
+
+| Code | Meaning |
+| --- | --- |
+| `POLYFILL_NOT_INITIALIZED` | Native: `SbtcProvider` mounted before `@sbtc/sdk/polyfills` was imported. |
+| `WALLET_NOT_FOUND` | A hook was used before a wallet was generated/restored. |
+| `WALLET_LOCKED` | A sensitive op was attempted on a locked wallet. |
+| `AUTH_FAILED` | Biometric / WebAuthn auth failed or was rejected. |
+| `AUTH_UNAVAILABLE` | No auth mechanism is available on this platform. |
+| `INVALID_MNEMONIC` | `restoreWallet` got an invalid BIP39 phrase. |
+| `INVALID_BTC_ADDRESS` | A withdrawal targeted a malformed BTC address. |
+| `INSUFFICIENT_BALANCE` | Requested amount exceeds available balance. |
+| `PSBT_SIGNING_FAILED` | The PSBT signer rejected or returned an invalid PSBT. |
+| `TX_SIGNING_FAILED` | Stacks transaction signing failed or was rejected. |
+| `EMILY_API_ERROR` | The Emily / sBTC pipeline returned an error. |
+| `DEPOSIT_BELOW_DUST` | Deposit below the 546-sat dust minimum. |
+| `NETWORK_TIMEOUT` | A network request exceeded its timeout. |
+| `STORAGE_ERROR` | A storage adapter read/write failed. |
+| `WALLET_CONNECT_UNAVAILABLE` | No supported wallet is installed/available. |
+| `NETWORK_SECURITY_ERROR` | An HTTP (non-HTTPS) endpoint was attempted. |
+| `SSR_NOT_SUPPORTED` | A wallet operation was attempted during SSR. |
+
+Import the enum for exhaustive handling:
+
+```tsx
+import { SbtcErrorCode } from '@sbtc/sdk';
+
+if (error?.code === SbtcErrorCode.AUTH_FAILED) {
+  /* ... */
+}
+```

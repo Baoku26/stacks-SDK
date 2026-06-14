@@ -1,0 +1,84 @@
+---
+title: Next.js DeFi App
+---
+
+# Example: Next.js DeFi App
+
+A Next.js (App Router) app that connects a wallet extension, shows balances, and runs deposit/withdraw. **No bundler configuration is needed** — the SDK's web build never references `expo-*` / `react-native`.
+
+> A complete, runnable version lives in the repo at `packages/example-web`.
+
+## 1. Provider (client component)
+
+`SbtcProvider` uses React context, so mark the provider boundary `'use client'`.
+
+```tsx
+// app/providers.tsx
+'use client';
+import { SbtcProvider } from '@sbtc/sdk';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <SbtcProvider network="testnet">{children}</SbtcProvider>;
+}
+```
+
+```tsx
+// app/layout.tsx
+import { Providers } from './providers';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+`next.config.ts` can be empty — no aliases required.
+
+## 2. Wallet options on web
+
+On web you have two paths:
+
+- **Local wallet** — `useStacksWallet` (keys in `localStorage` + AES-GCM, sensitive actions gated by WebAuthn / passphrase). Same API as native.
+- **Connect an extension** — use `@stacks/connect`'s `connect()` to read the user's Leather / Xverse accounts (address + public keys), then feed those into the sBTC hooks. With a connected extension, signing happens in the extension popup via the connect adapter.
+
+```tsx
+'use client';
+import { useState } from 'react';
+import { useSbtcBalance, useStxBalance, useSbtcDeposit, DepositStatus } from '@sbtc/sdk';
+
+export function Dashboard({ account }: { account: { stxAddress: string; btcAddress: string; paymentPublicKey: string } }) {
+  const sbtc = useSbtcBalance(account.stxAddress);
+  const stx = useStxBalance(account.stxAddress);
+
+  const { deposit, status, txid, error } = useSbtcDeposit({
+    stacksAddress: account.stxAddress,
+    bitcoinAddress: account.btcAddress,
+    paymentPublicKey: account.paymentPublicKey,
+  });
+
+  return (
+    <div>
+      <p>sBTC: {sbtc.btc ?? '—'} · STX: {stx.stx ?? '—'}</p>
+      <button disabled={status !== DepositStatus.IDLE} onClick={() => deposit(100_000)}>
+        Deposit 100k sats
+      </button>
+      <p>Status: {status}</p>
+      {txid && <p>BTC txid: {txid}</p>}
+      {error && <p>{error.code}: {error.message}</p>}
+    </div>
+  );
+}
+```
+
+## SSR
+
+The provider and hooks are SSR-safe: on the server the no-op adapter is selected and hooks return their loading state, so `/` prerenders without hydration mismatches. No wallet/storage/network access happens on the server.
+
+## Testnet contracts
+
+If testnet deposits fail with `EMILY_API_ERROR`/`NoSuchContract`, set `apiConfig.sbtcContractAddress` (and the withdrawal contract / token asset id) to the live testnet deployment — see [Provider](/provider).

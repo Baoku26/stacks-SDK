@@ -17,6 +17,15 @@ export interface NetworkConfig {
   sbtcTokenAssetId: string;
   /** `<address>.sbtc-withdrawal` contract for `initiate-withdrawal-request` (M6). */
   sbtcWithdrawalContract: string;
+  /**
+   * sBTC deployer principal (NOT a full contract id) — the address under which
+   * `sbtc-registry` / `sbtc-deposit` live. Passed to the `sbtc` client as its
+   * `sbtcContract` so deposit reads (`fetchSignersPublicKey`) hit the live
+   * deployment instead of the package's baked-in default. Testnet deployments
+   * churn; override via `SbtcProvider apiConfig` to track the live one
+   * (MEMORY.md → [SBTC] testnet deployment churn).
+   */
+  sbtcContractAddress: string;
 }
 
 export const MAINNET: NetworkConfig = {
@@ -27,6 +36,9 @@ export const MAINNET: NetworkConfig = {
   sbtcTokenAssetId: 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token',
   // VERIFIED 2026-06-13 (Hiro mainnet API): `initiate-withdrawal-request` present.
   sbtcWithdrawalContract: 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-withdrawal',
+  // Same deployer as the token/withdrawal contracts; matches the `sbtc` package's
+  // mainnet default.
+  sbtcContractAddress: 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4',
 };
 
 export const TESTNET: NetworkConfig = {
@@ -39,6 +51,10 @@ export const TESTNET: NetworkConfig = {
   // is not currently deployed (MEMORY.md → [SBTC] testnet deployment churn).
   // Override via `SbtcProvider apiConfig` to match the live testnet deployment.
   sbtcWithdrawalContract: 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-withdrawal',
+  // VERIFIED 2026-06-14 (Hiro testnet API): `ST1F7QA2….sbtc-registry` /
+  // `.sbtc-deposit` / `.sbtc-token` all present (200), whereas the `sbtc` package's
+  // baked-in testnet default `SNGWPN3X…` 404s. Same deployer as the token above.
+  sbtcContractAddress: 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT',
 };
 
 /** Merge optional endpoint overrides onto the selected network's defaults. */
@@ -53,5 +69,6 @@ export function resolveApiConfig(
     bitcoinApiUrl: overrides?.bitcoinApiUrl ?? base.bitcoinApiUrl,
     sbtcTokenAssetId: overrides?.sbtcTokenAssetId ?? base.sbtcTokenAssetId,
     sbtcWithdrawalContract: overrides?.sbtcWithdrawalContract ?? base.sbtcWithdrawalContract,
+    sbtcContractAddress: overrides?.sbtcContractAddress ?? base.sbtcContractAddress,
   };
 }

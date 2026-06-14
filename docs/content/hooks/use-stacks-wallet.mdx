@@ -1,0 +1,79 @@
+---
+title: useStacksWallet
+---
+
+# `useStacksWallet`
+
+Self-custodial HD wallet (account 0). Keys live only in secure storage via the adapter — never in React state. SSR-safe: the first render is the unloaded state, and the persisted wallet is loaded in an effect on the client/native.
+
+```tsx
+import { useStacksWallet } from '@sbtc/sdk';
+
+const wallet = useStacksWallet();
+```
+
+## Signature
+
+```ts
+function useStacksWallet(): UseStacksWalletResult;
+```
+
+## Returns
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `address` | `string \| null` | Stacks address (`ST…`/`SP…`), account 0. |
+| `btcAddress` | `string \| null` | Bitcoin p2wpkh address (`tb1…`/`bc1…`). |
+| `publicKey` | `string \| null` | Compressed secp256k1 public key (hex), account 0. |
+| `isLoaded` | `boolean` | `true` once the persisted wallet (if any) has been checked. |
+| `isLocked` | `boolean` | `true` after `lockWallet()` until reloaded. |
+| `error` | `SbtcError \| null` | Last error from `generateWallet` / `restoreWallet` / load. |
+| `generateWallet()` | `() => Promise<void>` | Create a new 24-word wallet, persist it, load addresses. |
+| `restoreWallet(mnemonic)` | `(string) => Promise<void>` | Restore from a BIP39 phrase. Sets `error` to `INVALID_MNEMONIC` if invalid. |
+| `lockWallet()` | `() => void` | Forget in-memory addresses for this session (keys stay in storage). |
+| `exportMnemonic()` | `() => Promise<string>` | Returns the mnemonic **after an auth prompt**. Rejects on auth failure. |
+| `clearWallet()` | `() => Promise<void>` | Deletes the wallet from storage **after an auth prompt**. Rejects on auth failure. |
+
+> `generateWallet` / `restoreWallet` surface failures via `error`. `exportMnemonic` / `clearWallet` are auth-guarded and **reject** with an `SbtcError` (e.g. `AUTH_FAILED`) — wrap them in `try/catch`.
+
+## Example
+
+```tsx
+function WalletPanel() {
+  const { address, btcAddress, generateWallet, restoreWallet, lockWallet, exportMnemonic, error } =
+    useStacksWallet();
+
+  const onExport = async () => {
+    try {
+      const mnemonic = await exportMnemonic(); // prompts biometrics / WebAuthn
+      // show it behind a reveal UI; never log it
+    } catch (e) {
+      // e.code === 'AUTH_FAILED' on cancel
+    }
+  };
+
+  if (!address) {
+    return (
+      <>
+        <button onClick={generateWallet}>Generate</button>
+        <button onClick={() => restoreWallet(prompt('Recovery phrase') ?? '')}>Restore</button>
+        {error && <p>{error.code}: {error.message}</p>}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <p>{address}</p>
+      <p>{btcAddress}</p>
+      <button onClick={onExport}>Export phrase</button>
+      <button onClick={lockWallet}>Lock</button>
+    </>
+  );
+}
+```
+
+## Related
+
+- [Security](/security) — key handling and `withAuthGuard`.
+- [useSbtcBalance / useStxBalance](/hooks/balances) — read balances for `address`.

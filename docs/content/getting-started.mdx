@@ -1,0 +1,100 @@
+---
+title: Getting Started
+---
+
+# Getting Started
+
+`@sbtc/sdk` runs on **React Native / Expo** and **React (web)** from one install. You write the same hooks on both; the SDK detects the platform and wires the right adapter.
+
+## Install
+
+```bash
+npm install @sbtc/sdk
+# or: pnpm add @sbtc/sdk / yarn add @sbtc/sdk
+```
+
+On **web** there is no extra bundler configuration. On **React Native** there are two one-time setup steps — see [Polyfills](/polyfills).
+
+## 1. Wrap your app in `SbtcProvider`
+
+`SbtcProvider` selects the platform adapter, resolves API endpoints, and provides the context every hook reads.
+
+```tsx
+import { SbtcProvider } from '@sbtc/sdk';
+
+export function Root({ children }) {
+  return <SbtcProvider network="testnet">{children}</SbtcProvider>;
+}
+```
+
+`network` is `'mainnet' | 'testnet'`. See [Provider](/provider) for `apiConfig` overrides and custom adapters.
+
+### React Native: polyfills first
+
+The **very first import** of your native entry file must be the polyfills, before anything that touches `Buffer` / `crypto`:
+
+```ts
+// index.ts (Expo / React Native entry)
+import '@sbtc/sdk/polyfills'; // MUST be line 1
+import { registerRootComponent } from 'expo';
+import App from './App';
+
+registerRootComponent(App);
+```
+
+This is a no-op on web. Details in [Polyfills](/polyfills).
+
+## 2. Create a wallet
+
+`useStacksWallet` manages a self-custodial HD wallet. Keys live only in secure storage (never in React state); the same code runs on both platforms.
+
+```tsx
+import { useStacksWallet } from '@sbtc/sdk';
+
+function Wallet() {
+  const { address, btcAddress, generateWallet, lockWallet, error } = useStacksWallet();
+
+  if (address) {
+    return (
+      <>
+        <p>STX: {address}</p>
+        <p>BTC: {btcAddress}</p>
+        <button onClick={lockWallet}>Lock</button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <button onClick={generateWallet}>Generate wallet</button>
+      {error && <p>{error.code}: {error.message}</p>}
+    </>
+  );
+}
+```
+
+Every hook returns errors via an `error` field (an [`SbtcError`](/security#errors)) — hooks never throw.
+
+## 3. Read balances
+
+```tsx
+import { useSbtcBalance, useStxBalance } from '@sbtc/sdk';
+
+function Balances({ address }: { address: string }) {
+  const sbtc = useSbtcBalance(address);
+  const stx = useStxBalance(address);
+  return (
+    <>
+      <p>{sbtc.btc ?? '—'}</p>
+      <p>{stx.stx ?? '—'}</p>
+    </>
+  );
+}
+```
+
+## Next steps
+
+- [Polyfills](/polyfills) — required native setup (the most common RN pitfall).
+- [Platform Adapters](/platform-adapters) — how detection works; custom adapters.
+- [Hooks](/hooks/use-stacks-wallet) — full reference for every hook.
+- [Examples](/examples/expo-wallet) — Expo wallet, Next.js DeFi app, contract calls.

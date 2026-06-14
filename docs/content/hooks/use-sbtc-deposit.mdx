@@ -1,0 +1,82 @@
+---
+title: useSbtcDeposit
+---
+
+# `useSbtcDeposit`
+
+Deposit **BTC → sBTC**. Builds the deposit with the official `sbtc` package, signs the PSBT (via the connect adapter or your override), broadcasts the Bitcoin transaction, notifies Emily, then polls deposit status in the background with backoff.
+
+```tsx
+import { useSbtcDeposit } from '@sbtc/sdk';
+
+const { deposit, status, txid, depositAddress, error, reset } = useSbtcDeposit(config);
+```
+
+## Signature
+
+```ts
+function useSbtcDeposit(config: UseSbtcDepositConfig): UseSbtcDepositResult;
+```
+
+## Config
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `stacksAddress` | `string` | Recipient Stacks address that receives the minted sBTC. |
+| `bitcoinAddress` | `string` | Bitcoin address funding the deposit and receiving change. |
+| `paymentPublicKey` | `string` | Compressed public key (hex) controlling the funding UTXOs. |
+| `reclaimPublicKey?` | `string` | Key allowed to reclaim an unprocessed deposit. Defaults to `paymentPublicKey`. |
+| `feeRate?` | `'low' \| 'medium' \| 'high'` | Bitcoin fee tier. Default `'medium'`. |
+| `maxSignerFee?` | `number` | Cap (sats) on the fee the sBTC signers may take. |
+| `signPsbt?` | `(psbt: Uint8Array) => Promise<Uint8Array>` | Override the signer. Defaults to `adapter.connect.signPsbt`. |
+| `pollIntervalMs?` | `number` | Emily poll interval while pending. Default `15000`. |
+| `onSuccess?` | `(bitcoinTxid: string) => void` | Called when the deposit confirms. |
+| `onError?` | `(error: SbtcError) => void` | Called on failure. |
+
+When using a local self-custodial wallet, populate `stacksAddress` / `bitcoinAddress` / `paymentPublicKey` from [`useStacksWallet`](/hooks/use-stacks-wallet) (`address`, `btcAddress`, `publicKey`).
+
+## Returns
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `deposit(amountSats)` | `(number \| bigint) => Promise<void>` | Build → sign → broadcast → notify Emily, then poll. |
+| `status` | `DepositStatus` | `idle \| building \| signing \| broadcasting \| pending \| confirmed \| failed`. |
+| `txid` | `string \| null` | Bitcoin txid, once broadcast. |
+| `depositAddress` | `string \| null` | The P2TR deposit address the BTC was sent to. |
+| `error` | `SbtcError \| null` | Failure detail (see below). |
+| `reset()` | `() => void` | Return to `idle` and stop polling. |
+
+## Example
+
+```tsx
+import { useStacksWallet, useSbtcDeposit, DepositStatus } from '@sbtc/sdk';
+
+function Deposit() {
+  const { address, btcAddress, publicKey } = useStacksWallet();
+
+  const { deposit, status, txid, error } = useSbtcDeposit({
+    stacksAddress: address!,
+    bitcoinAddress: btcAddress!,
+    paymentPublicKey: publicKey!,
+    onSuccess: (btcTxid) => console.log('confirmed', btcTxid),
+  });
+
+  return (
+    <>
+      <button disabled={status !== DepositStatus.IDLE} onClick={() => deposit(100_000)}>
+        Deposit 100k sats
+      </button>
+      <p>Status: {status}</p>
+      {txid && <p>BTC txid: {txid}</p>}
+      {error && <p>{error.code}: {error.message}</p>}
+    </>
+  );
+}
+```
+
+## Notes & errors
+
+- Amounts below the **546-sat dust minimum** fail fast with `DEPOSIT_BELOW_DUST`.
+- Signing failures surface as `PSBT_SIGNING_FAILED`; pipeline/Emily failures as `EMILY_API_ERROR` (the `message` carries the underlying cause).
+- A transient polling blip is **not** a failure — the hook backs off and retries while `pending`.
+- The default signer deep-links to an external wallet (Leather / Xverse). To sign with a local key, pass a `signPsbt` override.

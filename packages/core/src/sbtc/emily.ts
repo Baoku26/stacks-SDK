@@ -31,7 +31,14 @@ export { broadcastStacksTx, fetchStacksNonce } from '../contracts/stacksNode';
  * (signer key, UTXOs, fee rate, deposit status).
  */
 
-/** Build the network-appropriate `sbtc` client (keeps the package's `sbtcContract` default), enforcing HTTPS (SR-8). */
+/**
+ * Build the network-appropriate `sbtc` client, enforcing HTTPS (SR-8).
+ *
+ * Overrides the package's baked-in `sbtcContract` deployer with
+ * `apiConfig.sbtcContractAddress` — the package's testnet default is stale (its
+ * `sbtc-registry` 404s), so `fetchSignersPublicKey` would otherwise fail with
+ * `NoSuchContract`. See MEMORY.md → [SBTC] testnet deployment churn.
+ */
 export function createSbtcApiClient(
   apiConfig: NetworkConfig,
   network: 'mainnet' | 'testnet',
@@ -44,6 +51,7 @@ export function createSbtcApiClient(
     sbtcApiUrl: apiConfig.emilyApiUrl,
     btcApiUrl: apiConfig.bitcoinApiUrl,
     stxApiUrl: apiConfig.hiroApiUrl,
+    sbtcContract: apiConfig.sbtcContractAddress,
   };
   return network === 'mainnet'
     ? new SbtcApiClientMainnet(overrides)

@@ -1,0 +1,96 @@
+---
+title: Expo Wallet
+---
+
+# Example: Expo Wallet
+
+A minimal Expo app: generate a self-custodial wallet, show balances, and deposit/withdraw — keys in the device secure enclave, sensitive actions gated by biometrics.
+
+> A complete, runnable version lives in the repo at `packages/example-native`.
+
+## 1. Entry file — polyfills first
+
+```ts
+// index.ts
+import '@sbtc/sdk/polyfills'; // MUST be the first import
+import { registerRootComponent } from 'expo';
+import App from './App';
+
+registerRootComponent(App);
+```
+
+## 2. Metro config
+
+```js
+// metro.config.js
+const { getDefaultConfig } = require('expo/metro-config');
+const config = getDefaultConfig(__dirname);
+config.resolver.extraNodeModules = {
+  ...config.resolver.extraNodeModules,
+  stream: require.resolve('readable-stream'),
+};
+module.exports = config;
+```
+
+See [Polyfills](/polyfills) for why both steps are required.
+
+## 3. App
+
+```tsx
+// App.tsx
+import { SbtcProvider, NativeAdapter } from '@sbtc/sdk';
+import { WalletScreen } from './WalletScreen';
+
+export default function App() {
+  // Explicit adapter so we can set the deep-link callback scheme (matches app.json `scheme`).
+  const adapter = new NativeAdapter({ callbackScheme: 'sbtcsdk' });
+  return (
+    <SbtcProvider network="testnet" adapter={adapter}>
+      <WalletScreen />
+    </SbtcProvider>
+  );
+}
+```
+
+## 4. Wallet + balances screen
+
+```tsx
+// WalletScreen.tsx
+import { View, Text, Button } from 'react-native';
+import { useStacksWallet, useSbtcBalance, useStxBalance } from '@sbtc/sdk';
+
+export function WalletScreen() {
+  const { address, btcAddress, generateWallet, lockWallet, error } = useStacksWallet();
+  const sbtc = useSbtcBalance(address);
+  const stx = useStxBalance(address);
+
+  if (!address) {
+    return (
+      <View>
+        <Button title="Generate wallet" onPress={generateWallet} />
+        {error && <Text>{error.code}: {error.message}</Text>}
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      <Text>STX: {address}</Text>
+      <Text>BTC: {btcAddress}</Text>
+      <Text>sBTC: {sbtc.btc ?? '—'}</Text>
+      <Text>STX balance: {stx.stx ?? '—'}</Text>
+      <Button title="Lock" onPress={lockWallet} />
+    </View>
+  );
+}
+```
+
+## Native peers
+
+Install the optional native peers with `expo install` so versions match your Expo SDK:
+
+```bash
+npx expo install expo-secure-store expo-local-authentication expo-linking
+```
+
+Deposit/withdraw screens follow the same pattern — see [useSbtcDeposit](/hooks/use-sbtc-deposit) and [useSbtcWithdraw](/hooks/use-sbtc-withdraw). The default signer deep-links to Leather / Xverse; pass a `signPsbt` / `signTx` override to sign with another key.

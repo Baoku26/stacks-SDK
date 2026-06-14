@@ -1,22 +1,32 @@
 /**
- * Lazy loaders for the Expo native modules used by `NativeAdapter`.
+ * Web / default variant of the Expo native-module loaders.
  *
- * This (default) variant uses dynamic `import()`, so the `expo-*` packages stay
- * OUT of the web build's static module graph — they're absent from web installs,
- * so on web they become never-executed lazy chunks.
+ * On web the WebAdapter is always selected by `detectAdapter()`, so `NativeAdapter`
+ * — and therefore these loaders — is never instantiated. The bodies deliberately
+ * contain NO runtime `import('expo-*')`: the `typeof import('expo-*')` in the
+ * return annotations is a TYPE query (erased at build), so web bundlers
+ * (webpack / Turbopack / Vite) never traverse into `expo-*` → `react-native`
+ * (whose Flow syntax breaks web builds). This is what lets a web consumer install
+ * `@sbtc/sdk` with NO bundler-alias step.
  *
- * The `.native` sibling (`expo.native.ts`) replaces this with STATIC imports for
- * the React Native build: Metro cannot resolve a dynamic `import()` of a node
- * module from inside a pre-bundled dependency at runtime (it throws "Requiring
- * unknown module N"), so native must import the modules eagerly. Build selection
- * is by esbuild `resolveExtensions` (tsup native build) surfaced via the
- * package.json `react-native` export condition. See MEMORY.md → [ADAPTERS]
- * native module loading (Metro dynamic-import fix).
+ * The `.native` sibling (`expo.native.ts`) provides the real STATIC imports for
+ * React Native, selected via esbuild `resolveExtensions` in the tsup native build
+ * + the package.json `react-native` export condition. See MEMORY.md → [ADAPTERS]
+ * native module loading + web-graph isolation.
  */
+const nativeOnly = (feature: string): Promise<never> =>
+  Promise.reject(
+    new Error(
+      `[sbtc-sdk] native ${feature} is unavailable on web — NativeAdapter is never selected here. ` +
+        `This loader is unreachable on web; if you see this, the platform adapter was forced incorrectly.`,
+    ),
+  );
+
 export const loadSecureStore = (): Promise<typeof import('expo-secure-store')> =>
-  import('expo-secure-store');
+  nativeOnly('secure storage');
 
 export const loadLocalAuthentication = (): Promise<typeof import('expo-local-authentication')> =>
-  import('expo-local-authentication');
+  nativeOnly('local authentication');
 
-export const loadLinking = (): Promise<typeof import('expo-linking')> => import('expo-linking');
+export const loadLinking = (): Promise<typeof import('expo-linking')> =>
+  nativeOnly('deep linking');

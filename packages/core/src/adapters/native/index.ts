@@ -9,11 +9,14 @@ export type NativeAdapterOptions = NativeConnectOptions;
  * React Native / Expo adapter: `expo-secure-store` storage,
  * `expo-local-authentication` auth, and Leather/Xverse deep-link connect.
  *
- * BUNDLE SEPARATION: this file and its sub-adapters never statically import the
- * expo packages — each method does a dynamic `import()` instead. `detect.ts`
- * references both NativeAdapter and WebAdapter, so a static `import 'expo-*'`
- * here would be pulled into web bundles and break them (MEMORY.md → [ADAPTERS]
- * tree-shaking; verified by `pnpm size-check` not finding expo strings in web).
+ * BUNDLE SEPARATION: `detect.ts` references both NativeAdapter and WebAdapter, so
+ * this code is present in web bundles too. The expo packages are loaded through
+ * `./expo` (`loadSecureStore`/`loadLocalAuthentication`/`loadLinking`), whose
+ * web/default variant contains NO runtime `import('expo-*')` — only type-only
+ * references — so web bundlers never traverse into `expo-*`/`react-native`. The
+ * `.native` build variant (`expo.native.ts`) does the real static imports. This
+ * removes the web consumer's bundler-alias step. See MEMORY.md → [ADAPTERS]
+ * native module loading + web-graph isolation.
  */
 export class NativeAdapter implements PlatformAdapter {
   readonly platform = 'native' as const;

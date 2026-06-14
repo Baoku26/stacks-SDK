@@ -1,0 +1,78 @@
+---
+title: Contract Interaction
+---
+
+# Example: Contract Interaction
+
+Read state from and send transactions to any Clarity contract with [`useStacksContract`](/hooks/use-stacks-contract). Works identically on native and web.
+
+## Read-only query
+
+```tsx
+import { useStacksContract } from '@sbtc/sdk';
+import { standardPrincipalCV } from '@stacks/transactions';
+
+function Balance({ holder }: { holder: string }) {
+  const { data, isLoading, error, refetch } = useStacksContract<bigint>({
+    contract: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.token',
+    readOnly: { fn: 'get-balance', args: [standardPrincipalCV(holder)] },
+  });
+
+  if (isLoading) return <>…</>;
+  if (error) return <>{error.code}</>;
+  return (
+    <>
+      <span>{String(data)}</span>
+      <button onClick={refetch}>Refresh</button>
+    </>
+  );
+}
+```
+
+The result is decoded from its Clarity value to a JS value, typed by the `<T>` you supply.
+
+## State-changing call
+
+Provide a `sender` (address + public key) so the hook can build and pay for the transaction; `call()` signs (via the connect adapter or your `signTx`) and broadcasts, resolving the Stacks txid.
+
+```tsx
+import { useStacksContract, useStacksWallet } from '@sbtc/sdk';
+import { uintCV, standardPrincipalCV, noneCV } from '@stacks/transactions';
+
+function Transfer() {
+  const { address, publicKey } = useStacksWallet();
+
+  const { call, error } = useStacksContract({
+    contract: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.token',
+    sender: { address: address!, publicKey: publicKey! },
+  });
+
+  const send = async () => {
+    const txid = await call(
+      'transfer',
+      [uintCV(1_000), standardPrincipalCV(address!), standardPrincipalCV('SP2...recipient'), noneCV()],
+      { fee: 20_000 }, // optional per-call override (µSTX)
+    );
+    if (txid) console.log('broadcast', txid);
+  };
+
+  return (
+    <>
+      <button onClick={send}>Transfer</button>
+      {error && <p>{error.code}: {error.message}</p>}
+    </>
+  );
+}
+```
+
+## Fresh nonce for manual builds
+
+If you build transactions yourself, read the pending nonce with `useNonce` and `refresh()` right before signing:
+
+```tsx
+import { useNonce } from '@sbtc/sdk';
+
+const { nonce, refresh } = useNonce(address);
+```
+
+See the [useStacksContract reference](/hooks/use-stacks-contract) for the full config and return shape.

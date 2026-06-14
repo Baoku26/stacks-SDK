@@ -1,0 +1,80 @@
+---
+title: useSbtcWithdraw
+---
+
+# `useSbtcWithdraw`
+
+Withdraw **sBTC → BTC**. Builds an `initiate-withdrawal-request` contract call to the sBTC withdrawal contract, signs it (via the connect adapter or your override), broadcasts to the Stacks node, then polls Emily for the BTC release (~60 min).
+
+```tsx
+import { useSbtcWithdraw } from '@sbtc/sdk';
+
+const { withdraw, status, stacksTxid, btcTxid, estimatedConfirmationMinutes, error, reset } =
+  useSbtcWithdraw(config);
+```
+
+## Signature
+
+```ts
+function useSbtcWithdraw(config: UseSbtcWithdrawConfig): UseSbtcWithdrawResult;
+```
+
+## Config
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `stacksAddress` | `string` | Address initiating the withdrawal (sender + fee payer). |
+| `stacksPublicKey` | `string` | Sender's Stacks public key (hex) — builds the unsigned contract call. |
+| `maxFee?` | `number` | Max BTC fee (sats) the signers may take for the sweep. Default `80000`. |
+| `fee?` | `number \| bigint` | Stacks transaction fee in µSTX. Default `10000`. |
+| `signTx?` | `(tx: Uint8Array) => Promise<Uint8Array>` | Override the signer. Defaults to `adapter.connect.signStacksTx`. |
+| `pollIntervalMs?` | `number` | Emily poll interval while pending. Default `15000`. |
+| `onSuccess?` | `(bitcoinTxid: string) => void` | Called when BTC is released. |
+| `onError?` | `(error: SbtcError) => void` | Called on failure. |
+
+## Returns
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `withdraw(amountSats, btcAddress)` | `(number \| bigint, string) => Promise<void>` | Build → sign → broadcast the request, then poll Emily. |
+| `status` | `WithdrawalStatus` | `idle \| building \| signing \| broadcasting \| pending \| confirmed \| failed`. |
+| `stacksTxid` | `string \| null` | Stacks txid of the withdrawal request, once broadcast. |
+| `btcTxid` | `string \| null` | Bitcoin txid of the released funds, once Emily confirms. |
+| `estimatedConfirmationMinutes` | `number` | Static estimate to show users (~60, ≈6 BTC confirmations). |
+| `error` | `SbtcError \| null` | Failure detail. |
+| `reset()` | `() => void` | Return to `idle` and stop polling. |
+
+## Example
+
+```tsx
+import { useStacksWallet, useSbtcWithdraw, WithdrawalStatus } from '@sbtc/sdk';
+
+function Withdraw() {
+  const { address, publicKey } = useStacksWallet();
+
+  const { withdraw, status, stacksTxid, btcTxid, estimatedConfirmationMinutes, error } =
+    useSbtcWithdraw({ stacksAddress: address!, stacksPublicKey: publicKey! });
+
+  return (
+    <>
+      <button
+        disabled={status !== WithdrawalStatus.IDLE}
+        onClick={() => withdraw(50_000, 'tb1q...recipient')}
+      >
+        Withdraw 50k sats
+      </button>
+      <p>Status: {status} (~{estimatedConfirmationMinutes} min)</p>
+      {stacksTxid && <p>STX txid: {stacksTxid}</p>}
+      {btcTxid && <p>BTC txid: {btcTxid}</p>}
+      {error && <p>{error.code}: {error.message}</p>}
+    </>
+  );
+}
+```
+
+## Notes & errors
+
+- The recipient BTC address is validated; a malformed one fails with `INVALID_BTC_ADDRESS`.
+- Signing failures surface as `TX_SIGNING_FAILED`; pipeline/Emily failures as `EMILY_API_ERROR`.
+- The status machine stays `failed` until you call `reset()`.
+- The withdrawal contract id comes from `apiConfig.sbtcWithdrawalContract` — override it for testnet (see [Provider](/provider)).

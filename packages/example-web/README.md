@@ -22,15 +22,11 @@ pnpm --filter example-web dev      # http://localhost:3000
 
 No environment variables are required — testnet API URLs are the SDK defaults. To target a different deployment, pass `apiConfig` to `SbtcProvider` in `app/providers.tsx` (e.g. a live testnet `sbtc-withdrawal` contract — see the SDK's `MEMORY.md` on testnet deployment churn).
 
-## Web setup note (required for any web consumer)
+## Web setup note
 
-`@sbtc/sdk` ships a `NativeAdapter` that dynamically imports `expo-*` packages. Web bundlers (Turbopack / webpack) still **traverse** those dynamic imports and would try to parse `react-native`, which fails. `next.config.ts` aliases the native-only optional peers to an empty module:
+No bundler configuration is required. `@sbtc/sdk`'s web build contains no runtime `import('expo-*')` — the `NativeAdapter`'s native-module loaders are type-only on web — so Turbopack / webpack never traverse into `expo-*` or `react-native`. `next.config.ts` is empty.
 
-```ts
-const NATIVE_ONLY = ['expo-secure-store', 'expo-local-authentication', 'expo-linking', 'react-native'];
-```
-
-Any standalone web app using the SDK needs the same alias step (documented in the SDK's `platform-adapters` guide).
+> Earlier versions required aliasing the native-only peers (`expo-*`, `react-native`) to an empty module. That step is no longer needed as of the SDK's `react-native` export condition + web-graph-isolation fix.
 
 ## Deposit / withdraw flow
 

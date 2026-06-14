@@ -130,6 +130,10 @@ export function useSbtcWithdraw(config: UseSbtcWithdrawConfig): UseSbtcWithdrawR
           ? e
           : new SbtcError({
               code: SbtcErrorCode.EMILY_API_ERROR,
+              // Surface the real cause (e.g. a `NoSuchContract` from a stale sBTC
+              // deployer, a broadcast/nonce failure) rather than the generic default.
+              // Only build/network/contract errors reach here — no key material (SR-2).
+              message: e instanceof Error ? e.message : typeof e === 'string' ? e : undefined,
               originalError: e,
               platform: adapter.platform,
             });

@@ -1,0 +1,78 @@
+---
+title: Provider
+---
+
+# `SbtcProvider`
+
+The root provider. It auto-detects the platform adapter, resolves API endpoints (defaults merged with your overrides), and supplies the context every hook reads. Mount it once, near the top of your tree.
+
+```tsx
+import { SbtcProvider } from '@sbtc/sdk';
+
+<SbtcProvider network="testnet">
+  <App />
+</SbtcProvider>;
+```
+
+## Props
+
+| Prop | Type | Required | Description |
+| --- | --- | --- | --- |
+| `network` | `'mainnet' \| 'testnet'` | yes | Network all hooks target. |
+| `adapter` | `PlatformAdapter` | no | Overrides auto-detection — e.g. a custom HSM / hardware-wallet adapter. See [Platform Adapters](/platform-adapters). |
+| `apiConfig` | `Partial<NetworkConfig>` | no | Overrides the default Hiro / Emily / Bitcoin endpoints and sBTC contract ids. |
+| `children` | `ReactNode` | yes | Your app. |
+
+## `apiConfig` overrides
+
+`apiConfig` is a partial of `NetworkConfig`; any field you omit falls back to the network default.
+
+| Field | Description |
+| --- | --- |
+| `hiroApiUrl` | Stacks (Hiro) API base URL. |
+| `emilyApiUrl` | Emily (sBTC bridge) API base URL. |
+| `bitcoinApiUrl` | Bitcoin API base URL (mempool.space-compatible). |
+| `sbtcTokenAssetId` | SIP-010 asset id `"<contract>::<asset>"` for reading the sBTC balance. |
+| `sbtcWithdrawalContract` | `"<address>.sbtc-withdrawal"` for `initiate-withdrawal-request`. |
+| `sbtcContractAddress` | sBTC **deployer principal** (the address under which `sbtc-registry` / `sbtc-deposit` live). Used by the deposit flow. |
+
+### Defaults
+
+| | Mainnet | Testnet |
+| --- | --- | --- |
+| `hiroApiUrl` | `https://api.hiro.so` | `https://api.testnet.hiro.so` |
+| `emilyApiUrl` | `https://sbtc-emily.com` | `https://beta.sbtc-emily.com` |
+| `bitcoinApiUrl` | `https://mempool.space/api` | `https://mempool.space/testnet/api` |
+
+> **Testnet contract churn.** sBTC testnet deployments change over time. If deposits fail with a `NoSuchContract`/`EMILY_API_ERROR`, point `sbtcContractAddress` (and `sbtcWithdrawalContract` / `sbtcTokenAssetId` as needed) at the live testnet deployment you're targeting. Mainnet defaults are stable.
+
+```tsx
+<SbtcProvider
+  network="testnet"
+  apiConfig={{
+    sbtcContractAddress: 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT',
+  }}
+>
+  <App />
+</SbtcProvider>
+```
+
+All endpoints must be **HTTPS** — an HTTP endpoint throws `NETWORK_SECURITY_ERROR` (see [Security](/security)).
+
+## Reading the context
+
+Most apps only use the hooks, but you can read the resolved context directly:
+
+```tsx
+import { useSbtcContext } from '@sbtc/sdk';
+
+const { network, adapter, apiConfig } = useSbtcContext();
+```
+
+## Native polyfill guard
+
+On **native**, if `SbtcProvider` mounts before `@sbtc/sdk/polyfills` was imported (so `global.Buffer` is missing), it throws [`POLYFILL_NOT_INITIALIZED`](/security#errors). Import the polyfills as the first line of your entry file — see [Polyfills](/polyfills).
+
+## SSR
+
+During server-side rendering the no-op `SsrAdapter` is selected and hooks return their loading/empty state without touching storage, auth, or the network. No configuration required.

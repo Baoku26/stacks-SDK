@@ -1,0 +1,58 @@
+---
+title: Polyfills (Native)
+---
+
+# Polyfills (React Native)
+
+React Native (Hermes) lacks several globals the Stacks/Bitcoin libraries assume — `Buffer`, a secure `crypto.getRandomValues`, and Node's `stream`. `@sbtc/sdk` ships the fixes; you wire them up with **two one-time steps**. Both are **no-ops on web** — web consumers can skip this page entirely.
+
+> This is the single most common cause of a broken React Native setup. If you see a crash that mentions `Buffer`, `getRandomValues`, `stream`, or `POLYFILL_NOT_INITIALIZED`, it's almost always one of the two steps below.
+
+## 1. Import the polyfills first
+
+The **first line** of your native entry file must import `@sbtc/sdk/polyfills`, before any module that may touch `Buffer` / `crypto` (e.g. `@stacks/*`):
+
+```ts
+// index.ts (Expo / React Native entry — `main` in package.json)
+import '@sbtc/sdk/polyfills'; // ← MUST be the first import
+import { registerRootComponent } from 'expo';
+import App from './App';
+
+registerRootComponent(App);
+```
+
+The polyfills entry installs, in order: `global.Buffer` + a minimal `process`, then a native-secure `crypto.getRandomValues` (via `react-native-get-random-values`). It detects the browser (via `document`) and does nothing there.
+
+If `SbtcProvider` mounts on native before this ran, it throws [`POLYFILL_NOT_INITIALIZED`](/security#errors) — a deliberate, loud failure rather than a confusing downstream crash.
+
+## 2. Add the Metro `stream` alias
+
+Some transitive `@stacks` / `@scure` dependencies `require('stream')`, which Hermes doesn't provide. Alias it to `readable-stream` (shipped as a dependency of the SDK, so no extra install) in `metro.config.js`:
+
+```js
+// metro.config.js
+const { getDefaultConfig } = require('expo/metro-config');
+
+const config = getDefaultConfig(__dirname);
+
+config.resolver.extraNodeModules = {
+  ...config.resolver.extraNodeModules,
+  stream: require.resolve('readable-stream'),
+};
+
+module.exports = config;
+```
+
+A ready-to-copy version ships at `@sbtc/sdk`'s `templates/metro.config.js`.
+
+## What is NOT polyfilled
+
+- **`crypto.subtle`** is intentionally not polyfilled on native. The SDK derives wallets with pure-JS `@scure`/`@noble` (no WebCrypto needed), and storage uses the secure-store adapter — so nothing on the native path requires it.
+
+## Bare React Native (non-Expo)
+
+The same two steps apply; in `metro.config.js` start from `@react-native/metro-config`'s `getDefaultConfig` instead of `expo/metro-config`, then set the same `extraNodeModules.stream` alias.
+
+## Verifying
+
+After both steps, a freshly generated wallet should produce valid `ST…` / `SP…` (Stacks) and `tb1…` / `bc1…` (Bitcoin) addresses. If generation fails, re-check that the polyfill import is literally the first line and that Metro picked up the config (restart with `--clear`).

@@ -3,21 +3,23 @@ import { base64 } from '@scure/base';
 import { NativeAdapter } from './index';
 import { SbtcErrorCode } from '../../errors';
 
-// --- Mocked expo native modules (dynamically imported by the adapter) ---
+// --- Mocked expo native modules ---
+// The adapter loads expo-* through `./expo` (loadSecureStore/…); the web/default
+// variant has no runtime expo import and the `.native` variant statically imports
+// the real packages (→ react-native, unparseable here). So we mock the `./expo`
+// loader module directly, returning these fakes — platform-variant-agnostic.
 const secureStore = vi.hoisted(() => ({
   getItemAsync: vi.fn<(key: string) => Promise<string | null>>(),
   setItemAsync: vi.fn<(key: string, value: string, opts?: unknown) => Promise<void>>(),
   deleteItemAsync: vi.fn<(key: string) => Promise<void>>(),
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY',
 }));
-vi.mock('expo-secure-store', () => secureStore);
 
 const localAuth = vi.hoisted(() => ({
   hasHardwareAsync: vi.fn<() => Promise<boolean>>(),
   isEnrolledAsync: vi.fn<() => Promise<boolean>>(),
   authenticateAsync: vi.fn<(opts?: unknown) => Promise<{ success: boolean }>>(),
 }));
-vi.mock('expo-local-authentication', () => localAuth);
 
 const linking = vi.hoisted(() => {
   const state: { handler: ((event: { url: string }) => void) | null } = { handler: null };
@@ -32,7 +34,12 @@ const linking = vi.hoisted(() => {
     parse: vi.fn<(url: string) => { queryParams: Record<string, string> | null }>(),
   };
 });
-vi.mock('expo-linking', () => linking);
+
+vi.mock('./expo', () => ({
+  loadSecureStore: () => Promise.resolve(secureStore),
+  loadLocalAuthentication: () => Promise.resolve(localAuth),
+  loadLinking: () => Promise.resolve(linking),
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();

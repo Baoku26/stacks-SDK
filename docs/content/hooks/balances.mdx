@@ -1,0 +1,69 @@
+---
+title: useSbtcBalance / useStxBalance
+---
+
+# `useSbtcBalance` & `useStxBalance`
+
+Live balance hooks. Both take an address (or `null`/`undefined` to stay idle) and an optional polling interval, and expose a raw `bigint`, a formatted string, loading/refreshing flags, an `error`, and a manual `refresh()`.
+
+## `useSbtcBalance`
+
+Reads the SIP-010 sBTC token balance for `address`.
+
+```ts
+function useSbtcBalance(
+  address: string | null | undefined,
+  options?: { pollIntervalMs?: number },
+): UseSbtcBalanceResult;
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `sats` | `bigint \| null` | sBTC balance in satoshis (1 sBTC = 1e8 sats), or `null` before first load. |
+| `btc` | `string \| null` | Formatted BTC string, e.g. `'0.0012 BTC'`. |
+| `isLoading` | `boolean` | True until the first load settles. |
+| `isRefreshing` | `boolean` | True during a `refresh()` after data exists. |
+| `error` | `SbtcError \| null` | Last fetch error. |
+| `refresh()` | `() => void` | Re-fetch now. |
+
+## `useStxBalance`
+
+Reads the account's STX balance.
+
+```ts
+function useStxBalance(
+  address: string | null | undefined,
+  options?: { pollIntervalMs?: number },
+): UseStxBalanceResult;
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `microStx` | `bigint \| null` | Total STX balance in µSTX, or `null` before first load. |
+| `stx` | `string \| null` | Formatted STX string, e.g. `'1.234567 STX'`. |
+| `isLoading` | `boolean` | True until the first load settles. |
+| `isRefreshing` | `boolean` | True during a `refresh()`. |
+| `error` | `SbtcError \| null` | Last fetch error. |
+| `refresh()` | `() => void` | Re-fetch now. |
+
+## Example
+
+```tsx
+import { useStacksWallet, useSbtcBalance, useStxBalance } from '@sbtc/sdk';
+
+function Balances() {
+  const { address } = useStacksWallet();
+  const sbtc = useSbtcBalance(address); // null address → idle, no fetch
+  const stx = useStxBalance(address, { pollIntervalMs: 30_000 });
+
+  return (
+    <>
+      <p>sBTC: {sbtc.isLoading ? '…' : (sbtc.btc ?? '—')}</p>
+      <p>STX: {stx.isLoading ? '…' : (stx.stx ?? '—')}</p>
+      <button onClick={sbtc.refresh} disabled={sbtc.isRefreshing}>Refresh</button>
+    </>
+  );
+}
+```
+
+Passing `null`/`undefined` as the address keeps the hook idle (no request) — convenient before a wallet exists. For raw-value formatting, see the `formatSats` / `formatBtc` / `satsToBtc` / `btcToSats` utilities exported from `@sbtc/sdk`.

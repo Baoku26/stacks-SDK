@@ -1,0 +1,88 @@
+---
+title: Platform Adapters
+---
+
+# Platform Adapters
+
+The adapter system is what makes the hooks platform-agnostic. **Hooks never call `expo-secure-store`, `localStorage`, `@stacks/connect`, etc. directly** — every platform-specific operation goes through a `PlatformAdapter` on the context.
+
+## The contract
+
+A `PlatformAdapter` composes three sub-adapters and tags the platform:
+
+```ts
+interface PlatformAdapter {
+  platform: 'native' | 'web';
+  storage: StorageAdapter; //  get / set / remove  (encrypted at rest)
+  auth: AuthAdapter; //         isAvailable / prompt
+  connect: ConnectAdapter; //   signPsbt / signStacksTx / getAvailableWallets
+}
+```
+
+| Sub-adapter | Native | Web |
+| --- | --- | --- |
+| `storage` | `expo-secure-store` (hardware-backed Keychain/Keystore) | `localStorage` + AES-GCM |
+| `auth` | `expo-local-authentication` (biometrics / passcode) | WebAuthn, with a passphrase fallback |
+| `connect` | Leather / Xverse deep links | `@stacks/connect` extension popups |
+
+## Detection
+
+`SbtcProvider` calls `detectAdapter()` (unless you pass an `adapter` prop), which picks:
+
+1. **React Native** — `navigator.product === 'ReactNative'` → `NativeAdapter`.
+2. **Browser** (incl. Expo Web) — `typeof window !== 'undefined'` → `WebAdapter`.
+3. **SSR / server** — everything else → a no-op `SsrAdapter` (reports `platform: 'web'`).
+
+## Web needs no bundler configuration
+
+> Web consumers do **not** need to alias `expo-*` / `react-native`. The SDK's web build contains no runtime `import('expo-*')` — the native module loaders are type-only on web — so webpack / Turbopack / Vite never traverse into `react-native`. Just install and import.
+
+Per-platform builds also keep bundles lean: `NativeAdapter` is never bundled into web builds and vice versa.
+
+## Custom adapters
+
+Pass your own `adapter` to `SbtcProvider` to integrate an HSM, a hardware wallet, or a custom keystore. Implement the `PlatformAdapter` interface:
+
+```tsx
+import { SbtcProvider, type PlatformAdapter } from '@sbtc/sdk';
+
+const myAdapter: PlatformAdapter = {
+  platform: 'web',
+  storage: {
+    async get(key) {
+      /* read from your encrypted store */ return null;
+    },
+    async set(key, value) {
+      /* write encrypted */
+    },
+    async remove(key) {
+      /* delete */
+    },
+  },
+  auth: {
+    async isAvailable() {
+      return true;
+    },
+    async prompt(reason) {
+      /* show your auth UI */ return true;
+    },
+  },
+  connect: {
+    async signPsbt(psbt) {
+      /* sign the PSBT bytes */ return psbt;
+    },
+    async signStacksTx(tx) {
+      /* sign the tx bytes */ return tx;
+    },
+    async getAvailableWallets() {
+      return [];
+    },
+  },
+};
+
+<SbtcProvider network="mainnet" adapter={myAdapter}>
+  {/* ... */}
+</SbtcProvider>;
+```
+
+Sensitive operations (`exportMnemonic`, `clearWallet`, signing) are wrapped with `withAuthGuard`, which calls your `auth.prompt()` before proceeding — see [Security](/security).

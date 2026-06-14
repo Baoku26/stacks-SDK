@@ -1,0 +1,95 @@
+---
+title: useStacksContract
+---
+
+# `useStacksContract`
+
+Read-only queries and state-changing calls against any Clarity contract. Optionally runs a read-only query on mount; `call()` builds, signs, and broadcasts a contract-call transaction.
+
+```tsx
+import { useStacksContract } from '@sbtc/sdk';
+
+const { data, isLoading, error, refetch, call } = useStacksContract(config);
+```
+
+## Signature
+
+```ts
+function useStacksContract<T = unknown>(config: UseStacksContractConfig): UseStacksContractResult<T>;
+```
+
+## Config
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `contract` | `string` | Contract id `"<stxAddress>.<contract-name>"`. |
+| `readOnly?` | `ReadOnlyQuery` | Query evaluated on mount and re-run by `refetch()`. |
+| `sender?` | `{ address: string; publicKey: string }` | Required to send a state-changing `call()`. |
+| `signTx?` | `(tx: Uint8Array) => Promise<Uint8Array>` | Default signer for `call()`; defaults to `adapter.connect.signStacksTx`. |
+
+`ReadOnlyQuery`: `{ fn: string; args?: ClarityValue[]; sender?: string }` (`sender` defaults to the contract address).
+
+## Returns
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `data` | `T \| null` | Decoded read-only result (via `cvToValue`), or `null`. |
+| `isLoading` | `boolean` | True until the first read-only query settles. |
+| `isRefreshing` | `boolean` | True during a `refetch()` after data exists. |
+| `error` | `SbtcError \| null` | Last read-only **or** `call()` error. |
+| `refetch()` | `() => void` | Re-run the read-only query (no-op if none configured). |
+| `call(fn, args?, options?)` | `(string, ClarityValue[]?, ContractCallOptions?) => Promise<string \| null>` | Build → sign → broadcast a contract call; resolves the Stacks txid. |
+
+`ContractCallOptions`: `{ fee?: number \| bigint; signTx?: (tx) => Promise<Uint8Array> }` (per-call overrides; `fee` default 10,000 µSTX).
+
+## Read-only example
+
+```tsx
+import { useStacksContract } from '@sbtc/sdk';
+import { standardPrincipalCV } from '@stacks/transactions';
+
+function TokenName() {
+  const { data, isLoading, error } = useStacksContract<string>({
+    contract: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.token',
+    readOnly: { fn: 'get-name' },
+  });
+
+  if (isLoading) return <>…</>;
+  if (error) return <>{error.code}</>;
+  return <>{data}</>;
+}
+```
+
+## State-changing call
+
+```tsx
+import { useStacksContract, useStacksWallet } from '@sbtc/sdk';
+import { uintCV, standardPrincipalCV } from '@stacks/transactions';
+
+function Transfer() {
+  const { address, publicKey } = useStacksWallet();
+
+  const { call, error } = useStacksContract({
+    contract: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.token',
+    sender: { address: address!, publicKey: publicKey! },
+  });
+
+  const onSend = async () => {
+    const txid = await call('transfer', [uintCV(100), standardPrincipalCV('SP2...recipient')]);
+    if (txid) console.log('broadcast', txid);
+  };
+
+  return <button onClick={onSend}>Send</button>;
+}
+```
+
+## `useNonce`
+
+For manual transaction building, `useNonce(address)` exposes the account's pending nonce:
+
+```ts
+function useNonce(address: string | null | undefined): UseNonceResult;
+// { nonce: number | null; isLoading; isRefreshing; error; refresh() }
+```
+
+Call `refresh()` immediately before building a transaction to avoid a stale nonce.

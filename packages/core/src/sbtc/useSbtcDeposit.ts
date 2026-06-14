@@ -93,6 +93,10 @@ export function useSbtcDeposit(config: UseSbtcDepositConfig): UseSbtcDepositResu
           ? e
           : new SbtcError({
               code: SbtcErrorCode.EMILY_API_ERROR,
+              // Surface the real cause (e.g. a `NoSuchContract` from a stale sBTC
+              // deployer, a fee/UTXO fetch failure) rather than the generic default.
+              // Only build/network/contract errors reach here — no key material (SR-2).
+              message: e instanceof Error ? e.message : typeof e === 'string' ? e : undefined,
               originalError: e,
               platform: adapter.platform,
             });
