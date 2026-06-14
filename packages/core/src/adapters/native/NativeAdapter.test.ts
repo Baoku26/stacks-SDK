@@ -43,18 +43,41 @@ beforeEach(() => {
 describe('NativeAdapter.storage (expo-secure-store)', () => {
   const { storage } = new NativeAdapter();
 
-  it('get returns the stored value', async () => {
+  // expo-secure-store only accepts keys matching this charset; the adapter must
+  // map any logical key to one that satisfies it (regression: '@sbtc_sdk/wallet_v1').
+  const SECURE_STORE_KEY = /^[\w.-]+$/;
+
+  it('get returns the stored value (keyed by a SecureStore-safe token)', async () => {
     secureStore.getItemAsync.mockResolvedValue('the-value');
     await expect(storage.get('k')).resolves.toBe('the-value');
-    expect(secureStore.getItemAsync).toHaveBeenCalledWith('k');
+    const usedKey = secureStore.getItemAsync.mock.calls[0]?.[0];
+    expect(usedKey).toMatch(SECURE_STORE_KEY);
+  });
+
+  it('encodes logical keys with invalid chars into a SecureStore-safe key', async () => {
+    secureStore.getItemAsync.mockResolvedValue(null);
+    await storage.get('@sbtc_sdk/wallet_v1'); // contains '@' and '/', rejected raw
+    const usedKey = secureStore.getItemAsync.mock.calls[0]?.[0];
+    expect(usedKey).toMatch(SECURE_STORE_KEY);
+  });
+
+  it('set/get/remove use the same derived key (round-trips)', async () => {
+    secureStore.setItemAsync.mockResolvedValue();
+    secureStore.deleteItemAsync.mockResolvedValue();
+    await storage.set('@sbtc_sdk/wallet_v1', 'v');
+    await storage.remove('@sbtc_sdk/wallet_v1');
+    const setKey = secureStore.setItemAsync.mock.calls[0]?.[0];
+    const removeKey = secureStore.deleteItemAsync.mock.calls[0]?.[0];
+    expect(setKey).toBe(removeKey);
   });
 
   it('set writes with WHEN_UNLOCKED_THIS_DEVICE_ONLY', async () => {
     secureStore.setItemAsync.mockResolvedValue();
     await storage.set('k', 'v');
-    expect(secureStore.setItemAsync).toHaveBeenCalledWith('k', 'v', {
-      keychainAccessible: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY',
-    });
+    const [usedKey, value, opts] = secureStore.setItemAsync.mock.calls[0] ?? [];
+    expect(usedKey).toMatch(SECURE_STORE_KEY);
+    expect(value).toBe('v');
+    expect(opts).toEqual({ keychainAccessible: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY' });
   });
 
   it('wraps failures as STORAGE_ERROR', async () => {

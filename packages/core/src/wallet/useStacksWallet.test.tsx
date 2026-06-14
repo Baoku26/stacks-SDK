@@ -87,6 +87,7 @@ describe('useStacksWallet', () => {
     });
     expect(get().address).toMatch(/^ST/);
     expect(get().btcAddress).toMatch(/^tb1q/);
+    expect(get().publicKey).toMatch(/^0[23][0-9a-f]{64}$/);
     expect(get().error).toBeNull();
   });
 
@@ -96,6 +97,9 @@ describe('useStacksWallet', () => {
       await get().restoreWallet(MNEMONIC);
     });
     expect(get().address).toBe('STC5KHM41H6WHAST7MWWDD807YSPRQKJ68T330BQ');
+    expect(get().publicKey).toBe(
+      '03d5d038bce81b3965314dba54f636f093c7dbdd6617cded013a53474fbccb100c',
+    );
   });
 
   it('restoreWallet surfaces INVALID_MNEMONIC via the error field (does not throw)', async () => {
@@ -116,6 +120,7 @@ describe('useStacksWallet', () => {
       get().lockWallet();
     });
     expect(get().address).toBeNull();
+    expect(get().publicKey).toBeNull();
     expect(get().isLocked).toBe(true);
   });
 

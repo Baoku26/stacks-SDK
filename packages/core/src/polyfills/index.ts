@@ -18,9 +18,15 @@ import { applyBufferPolyfill } from './buffer';
 import { applyCryptoPolyfill } from './crypto';
 import { applyStreamsPolyfill } from './streams';
 
-// Browser → no-op. Native (no `window`) and other non-browser runtimes → apply,
-// synchronously and in order, so Buffer/crypto exist before any consumer import.
-if (typeof window === 'undefined') {
+// Browser (incl. Expo Web) → no-op. React Native (Hermes) and other non-browser
+// runtimes → apply, synchronously and in order, so Buffer/crypto exist before any
+// consumer import.
+//
+// The marker is `document`, NOT `window`: React Native defines a global `window`
+// (`window === global`), so a `typeof window` guard wrongly skips the polyfills on
+// native and `SbtcProvider` then throws POLYFILL_NOT_INITIALIZED. Only a real DOM
+// (browser / Expo Web) defines `document`; React Native and Node do not.
+if (typeof document === 'undefined') {
   applyBufferPolyfill();
   applyCryptoPolyfill();
   applyStreamsPolyfill();

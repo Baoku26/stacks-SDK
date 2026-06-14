@@ -12,6 +12,7 @@ const WALLET_KEY = '@sbtc_sdk/wallet_v1';
 const INITIAL_STATE: WalletState = {
   address: null,
   btcAddress: null,
+  publicKey: null,
   isLoaded: false,
   isLocked: false,
   error: null,
@@ -55,6 +56,7 @@ export function useStacksWallet(): UseStacksWalletResult {
     setState({
       address: account.address,
       btcAddress: account.btcAddress,
+      publicKey: account.publicKey,
       isLoaded: true,
       isLocked: false,
       error: null,
@@ -121,7 +123,7 @@ export function useStacksWallet(): UseStacksWalletResult {
   );
 
   const lockWallet = useCallback(() => {
-    setState((s) => ({ ...s, address: null, btcAddress: null, isLocked: true }));
+    setState((s) => ({ ...s, address: null, btcAddress: null, publicKey: null, isLocked: true }));
   }, []);
 
   const exportMnemonic = useCallback(

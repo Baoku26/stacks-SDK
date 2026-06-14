@@ -1,48 +1,29 @@
 /**
- * Polyfill: WebCrypto on native (`global.crypto`).
+ * Polyfill: secure `crypto.getRandomValues` on native (`global.crypto`).
  *
- * Run second by `polyfills/index.ts` (after buffer.ts — `@peculiar/webcrypto`
- * uses `Buffer`). Two pieces, composed deliberately:
+ * Run second by `polyfills/index.ts` (after buffer.ts). One piece:
  *  - `react-native-get-random-values` installs a NATIVE, secure
  *    `crypto.getRandomValues` (Hermes has none). Side-effect import below.
- *  - `@peculiar/webcrypto` provides `crypto.subtle`, which the above lacks.
  *
- * We KEEP the native `getRandomValues` and add only `subtle`. The @peculiar
- * `Crypto` is instantiated lazily — ONLY when `crypto.subtle` is missing — so it
- * is never constructed in a browser (where its Node-`crypto`-backed `subtle`
- * could throw). Exported as a function so `polyfills/index.ts` runs it only off
- * the browser path. Idempotent (FR-2.2).
+ * We deliberately do NOT polyfill `crypto.subtle` on native. The only consumer
+ * of `subtle` is the WebAdapter storage (`adapters/web/storage.ts`), which is
+ * never bundled on native and runs in a browser where `subtle` is native. The
+ * native crypto stack (@scure/@noble, expo-secure-store) needs only
+ * `getRandomValues`. The previous `@peculiar/webcrypto` source was Node-
+ * `crypto`-backed: it could not even be bundled by Metro (its `node:*` imports
+ * fail to resolve on Hermes) and would throw at runtime. See MEMORY.md →
+ * [POLYFILLS] crypto.ts — the documented "swap the subtle source" contingency.
+ * If a native consumer ever genuinely needs `subtle`, add a Hermes-compatible
+ * source (expo-crypto / pure-JS WebCrypto) here — only this file changes.
+ *
+ * Exported as a function so `polyfills/index.ts` runs it only off the browser
+ * path. Idempotent (FR-2.2).
  */
 import 'react-native-get-random-values';
-import { Crypto } from '@peculiar/webcrypto';
 
-/** Minimal writable view of the global crypto slot (avoids lib.dom's readonly `crypto`). */
-interface CryptoHost {
-  crypto?: { subtle?: unknown; getRandomValues?: unknown };
-}
-
-/** Idempotently ensure `global.crypto` has both `getRandomValues` and `subtle`. */
+/** Idempotently ensure `global.crypto` exposes `getRandomValues`. */
 export function applyCryptoPolyfill(): void {
-  const host = globalThis as unknown as CryptoHost;
-
-  // Full WebCrypto already present (browser, Node 16+): nothing to do — and do
-  // NOT instantiate @peculiar, whose subtle may throw in a browser bundle.
-  if (host.crypto !== undefined && host.crypto.subtle !== undefined) {
-    return;
-  }
-
-  const webcrypto = new Crypto();
-
-  if (host.crypto === undefined) {
-    // No crypto at all — install the full @peculiar implementation.
-    host.crypto = webcrypto;
-  } else {
-    // react-native-get-random-values installed getRandomValues but not subtle.
-    // Add subtle from @peculiar without disturbing the native getRandomValues.
-    Object.defineProperty(host.crypto, 'subtle', {
-      value: webcrypto.subtle,
-      configurable: true,
-      enumerable: true,
-    });
-  }
+  // `react-native-get-random-values` (imported above for its side effect) has
+  // already installed the native, secure `crypto.getRandomValues`. Nothing more
+  // to do — `crypto.subtle` is intentionally not polyfilled on native.
 }

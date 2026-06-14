@@ -16,11 +16,14 @@ const g = globalThis as unknown as PolyfilledGlobal;
 const flags = globalThis as unknown as Record<string, unknown>;
 
 describe('polyfills entry (simulated native env)', () => {
-  it('defines Buffer, process, and crypto with subtle after import', () => {
+  it('defines Buffer, process, and crypto.getRandomValues after import', () => {
     expect(typeof g.Buffer).toBe('function');
     expect(g.process).toBeDefined();
     expect(g.crypto).toBeDefined();
-    expect(g.crypto?.subtle).toBeDefined();
+    // The native crypto polyfill provides getRandomValues (via
+    // react-native-get-random-values). `subtle` is intentionally NOT polyfilled
+    // on native — here it is present only because the Node test runtime has it.
+    expect(g.crypto?.getRandomValues).toBeDefined();
   });
 
   it('applyBufferPolyfill is idempotent and guarantees process.nextTick', () => {

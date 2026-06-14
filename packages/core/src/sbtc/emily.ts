@@ -10,6 +10,11 @@ import { SbtcError, SbtcErrorCode } from '../errors';
 import { assertHttps, fetchJson } from '../utils/http';
 import type { NetworkConfig } from '../utils/network';
 
+// Generic Stacks-node helpers live in `contracts/stacksNode.ts` so contract-only
+// consumers don't drag the `sbtc` peer imported below. Re-exported here for the
+// existing `useSbtcWithdraw` import site (`./emily`).
+export { broadcastStacksTx, fetchStacksNonce } from '../contracts/stacksNode';
+
 /**
  * Internal glue to the official `sbtc` package (an optional peer dep — see
  * package.json / NFR-1.1, excluded from the bundle budget). NOT barrel-exported.
@@ -74,50 +79,6 @@ export async function broadcastRawTx(
     });
   }
   return text;
-}
-
-/** Broadcast a signed Stacks transaction (raw bytes) to the Hiro node; returns the Stacks txid. */
-export async function broadcastStacksTx(
-  apiConfig: NetworkConfig,
-  txBytes: Uint8Array,
-  platform?: 'native' | 'web',
-): Promise<string> {
-  const url = `${apiConfig.hiroApiUrl.replace(/\/$/, '')}/v2/transactions`;
-  assertHttps(url, platform);
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream' },
-      // Copy into an ArrayBuffer-backed view — `BodyInit` rejects the wide
-      // `Uint8Array<ArrayBufferLike>` under the TS 5.7+ lib.
-      body: new Uint8Array(txBytes),
-    });
-  } catch (originalError) {
-    throw new SbtcError({ code: SbtcErrorCode.NETWORK_TIMEOUT, originalError, platform, context: { url } });
-  }
-  const text = (await response.text()).trim();
-  if (!response.ok) {
-    throw new SbtcError({
-      code: SbtcErrorCode.TX_SIGNING_FAILED,
-      message: text || `Stacks broadcast failed (${response.status}).`,
-      platform,
-      context: { url, status: response.status },
-    });
-  }
-  // Hiro returns the txid as a JSON-quoted hex string (e.g. `"abcd…"`).
-  return text.replace(/^"|"$/g, '');
-}
-
-/** Hiro node account response (nonce only — `?proof=0`). */
-export async function fetchStacksNonce(
-  apiConfig: NetworkConfig,
-  address: string,
-  platform?: 'native' | 'web',
-): Promise<number> {
-  const url = `${apiConfig.hiroApiUrl.replace(/\/$/, '')}/v2/accounts/${address}?proof=0`;
-  const account = await fetchJson<{ nonce: number }>(url, { platform });
-  return account.nonce;
 }
 
 /** Emily withdrawal status. Shape is UNVERIFIED — confirm before M6 integration (T061/T062). */

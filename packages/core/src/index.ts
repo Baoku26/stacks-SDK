@@ -54,4 +54,10 @@ export { useStxBalance } from './contracts/useStxBalance';
 export type { UseStxBalanceResult } from './contracts/useStxBalance';
 export { useNonce } from './contracts/useNonce';
 export type { UseNonceResult } from './contracts/useNonce';
-// TODO(M7 T063): export { useStacksContract } from './contracts/useStacksContract';
+export { useStacksContract } from './contracts/useStacksContract';
+export type {
+  UseStacksContractConfig,
+  UseStacksContractResult,
+  ReadOnlyQuery,
+  ContractCallOptions,
+} from './contracts/useStacksContract';

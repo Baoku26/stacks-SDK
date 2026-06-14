@@ -1,7 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useStacksWallet, useSbtcContext, SbtcError, type WalletApp } from '@sbtc/sdk';
+import {
+  useStacksWallet,
+  useSbtcContext,
+  useSbtcBalance,
+  useStxBalance,
+  useSbtcDeposit,
+  useSbtcWithdraw,
+  WithdrawalStatus,
+  SbtcError,
+  type WalletApp,
+} from '@sbtc/sdk';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -21,19 +31,75 @@ function Button({
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
-  variant?: 'default' | 'danger';
+  variant?: 'default' | 'danger' | 'subtle';
 }) {
   const base =
     'rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40';
   const styles =
     variant === 'danger'
       ? 'bg-red-600 text-white hover:bg-red-500'
-      : 'bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-black dark:hover:bg-zinc-300';
+      : variant === 'subtle'
+        ? 'border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800'
+        : 'bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-black dark:hover:bg-zinc-300';
   return (
     <button className={`${base} ${styles}`} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-xs uppercase tracking-wide text-zinc-500">{label}</span>
+      <input
+        className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 font-mono text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:text-zinc-100"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        spellCheck={false}
+      />
+    </label>
+  );
+}
+
+/** A wallet account connected via the browser extension (Leather / Xverse). */
+interface ConnectedAccount {
+  stxAddress: string;
+  stxPublicKey: string;
+  btcAddress: string;
+  btcPublicKey: string;
+}
+
+/**
+ * Pick the Stacks account + the native-SegWit (p2wpkh) Bitcoin payment account out
+ * of the addresses returned by `@stacks/connect`'s `connect()`. We avoid the
+ * taproot (`…1p…`) entry — sBTC deposits fund from the p2wpkh payment account.
+ */
+function pickAccount(
+  addresses: { address: string; publicKey: string }[],
+): ConnectedAccount | null {
+  const stx = addresses.find((a) => /^S[PT]/.test(a.address));
+  const btc =
+    addresses.find((a) => /^(bc1q|tb1q)/.test(a.address)) ??
+    addresses.find((a) => /^(bc1|tb1)/.test(a.address) && !/^(bc1p|tb1p)/.test(a.address));
+  if (!stx || !btc) return null;
+  return {
+    stxAddress: stx.address,
+    stxPublicKey: stx.publicKey,
+    btcAddress: btc.address,
+    btcPublicKey: btc.publicKey,
+  };
 }
 
 export default function Home() {
@@ -44,6 +110,31 @@ export default function Home() {
   const [wallets, setWallets] = useState<WalletApp[] | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  // Connected browser-extension account (used for deposit / withdraw).
+  const [account, setAccount] = useState<ConnectedAccount | null>(null);
+  const [connecting, setConnecting] = useState(false);
+
+  // Balances follow the connected account when present, else the local wallet.
+  const balanceAddress = account?.stxAddress ?? wallet.address;
+  const sbtc = useSbtcBalance(balanceAddress);
+  const stx = useStxBalance(balanceAddress);
+
+  // Deposit / withdraw orchestration. Config is read each render, so it tracks the
+  // connected account; the deposit/withdraw buttons are disabled until connected.
+  const deposit = useSbtcDeposit({
+    stacksAddress: account?.stxAddress ?? '',
+    bitcoinAddress: account?.btcAddress ?? '',
+    paymentPublicKey: account?.btcPublicKey ?? '',
+  });
+  const withdraw = useSbtcWithdraw({
+    stacksAddress: account?.stxAddress ?? '',
+    stacksPublicKey: account?.stxPublicKey ?? '',
+  });
+
+  const [depositAmount, setDepositAmount] = useState('10000');
+  const [withdrawAmount, setWithdrawAmount] = useState('10000');
+  const [withdrawTo, setWithdrawTo] = useState('');
+
   const busy = !wallet.isLoaded;
 
   async function withErr(fn: () => Promise<void>) {
@@ -53,6 +144,27 @@ export default function Home() {
     } catch (e) {
       setActionError(e instanceof SbtcError ? `${e.code}: ${e.message}` : String(e));
     }
+  }
+
+  async function connectExtension() {
+    setConnecting(true);
+    await withErr(async () => {
+      // Dynamic import: @stacks/connect touches `window`, so keep it off the SSR path.
+      const { connect } = await import('@stacks/connect');
+      const result = await connect();
+      const picked = pickAccount(result.addresses);
+      if (picked === null) {
+        throw new Error('Wallet did not return a Stacks + p2wpkh Bitcoin address pair.');
+      }
+      setAccount(picked);
+    });
+    setConnecting(false);
+  }
+
+  async function disconnectExtension() {
+    const { disconnect } = await import('@stacks/connect');
+    disconnect();
+    setAccount(null);
   }
 
   return (
@@ -67,9 +179,13 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Wallet */}
+      {/* Local wallet */}
       <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
-        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Wallet</h2>
+        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Local wallet</h2>
+        <p className="text-sm text-zinc-500">
+          Self-custodial wallet the SDK generates and stores (encrypted localStorage + WebAuthn /
+          passphrase auth). Separate from the connected extension below.
+        </p>
 
         {!wallet.isLoaded ? (
           <p className="text-sm text-zinc-500">Loading…</p>
@@ -145,11 +261,165 @@ export default function Home() {
         )}
       </section>
 
-      {/* Stacks Connect */}
+      {/* Connected extension */}
       <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
-        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Stacks Connect</h2>
+        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
+          Connected wallet (deposit / withdraw)
+        </h2>
         <p className="text-sm text-zinc-500">
-          Supported wallets the connect adapter can hand off to (signing hooks land in M5/M6).
+          Deposit and withdraw sign through a browser extension (Leather / Xverse) via Stacks
+          Connect. Connect one to provide the funding account + public keys.
+        </p>
+
+        {account === null ? (
+          <div>
+            <Button disabled={connecting} onClick={() => void connectExtension()}>
+              {connecting ? 'Connecting…' : 'Connect extension'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <Row label="Stacks account" value={account.stxAddress} />
+            <Row label="Bitcoin account (p2wpkh)" value={account.btcAddress} />
+            <div>
+              <Button variant="subtle" onClick={() => void disconnectExtension()}>
+                Disconnect
+              </Button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Balances */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Balances</h2>
+          <button
+            className="text-xs text-zinc-500 underline disabled:opacity-40"
+            disabled={balanceAddress === null || sbtc.isRefreshing || stx.isRefreshing}
+            onClick={() => {
+              sbtc.refresh();
+              stx.refresh();
+            }}
+          >
+            {sbtc.isRefreshing || stx.isRefreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </div>
+
+        {balanceAddress === null ? (
+          <p className="text-sm text-zinc-500">
+            Generate a local wallet or connect an extension to see balances.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-zinc-500">
+              For <span className="font-mono">{balanceAddress}</span>
+            </p>
+            <div className="flex flex-col gap-3">
+              <Row label="sBTC" value={sbtc.isLoading ? 'Loading…' : (sbtc.btc ?? '—')} />
+              <Row label="STX" value={stx.isLoading ? 'Loading…' : (stx.stx ?? '—')} />
+            </div>
+          </>
+        )}
+
+        {(sbtc.error || stx.error) && (
+          <p className="text-sm text-red-600">
+            balance error — {(sbtc.error ?? stx.error)?.code}: {(sbtc.error ?? stx.error)?.message}
+          </p>
+        )}
+      </section>
+
+      {/* Deposit */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
+        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Deposit BTC → sBTC</h2>
+        <Field
+          label="Amount (sats)"
+          value={depositAmount}
+          onChange={setDepositAmount}
+          placeholder="10000"
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            disabled={account === null || Number(depositAmount) <= 0}
+            onClick={() => void deposit.deposit(Number(depositAmount))}
+          >
+            Deposit
+          </Button>
+          <Button variant="subtle" onClick={() => deposit.reset()}>
+            Reset
+          </Button>
+          <span className="text-sm text-zinc-500">
+            status: <span className="font-mono">{deposit.status}</span>
+          </span>
+        </div>
+        {account === null && (
+          <p className="text-xs text-zinc-500">Connect an extension above to deposit.</p>
+        )}
+        {deposit.depositAddress && <Row label="Deposit address" value={deposit.depositAddress} />}
+        {deposit.txid && <Row label="Bitcoin txid" value={deposit.txid} />}
+        {deposit.error && (
+          <p className="text-sm text-red-600">
+            deposit error — {deposit.error.code}: {deposit.error.message}
+          </p>
+        )}
+      </section>
+
+      {/* Withdraw */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
+        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
+          Withdraw sBTC → BTC
+        </h2>
+        <Field
+          label="Amount (sats)"
+          value={withdrawAmount}
+          onChange={setWithdrawAmount}
+          placeholder="10000"
+        />
+        <Field
+          label="Bitcoin recipient address"
+          value={withdrawTo}
+          onChange={setWithdrawTo}
+          placeholder="tb1q…"
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            disabled={account === null || Number(withdrawAmount) <= 0 || withdrawTo.trim() === ''}
+            onClick={() => void withdraw.withdraw(Number(withdrawAmount), withdrawTo.trim())}
+          >
+            Withdraw
+          </Button>
+          <Button variant="subtle" onClick={() => withdraw.reset()}>
+            Reset
+          </Button>
+          <span className="text-sm text-zinc-500">
+            status: <span className="font-mono">{withdraw.status}</span>
+          </span>
+        </div>
+        {account === null && (
+          <p className="text-xs text-zinc-500">Connect an extension above to withdraw.</p>
+        )}
+        {withdraw.stacksTxid && <Row label="Stacks txid" value={withdraw.stacksTxid} />}
+        {withdraw.btcTxid && <Row label="Bitcoin txid (released)" value={withdraw.btcTxid} />}
+        {(withdraw.status === WithdrawalStatus.PENDING ||
+          withdraw.status === WithdrawalStatus.CONFIRMED) && (
+          <p className="text-xs text-zinc-500">
+            BTC arrives in ~{withdraw.estimatedConfirmationMinutes} min (≈6 confirmations).
+          </p>
+        )}
+        {withdraw.error && (
+          <p className="text-sm text-red-600">
+            withdraw error — {withdraw.error.code}: {withdraw.error.message}
+          </p>
+        )}
+      </section>
+
+      {/* Stacks Connect — wallet discovery */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
+        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
+          Stacks Connect — wallet discovery
+        </h2>
+        <p className="text-sm text-zinc-500">
+          Supported wallets the connect adapter can hand off to for PSBT / transaction signing.
         </p>
         <div>
           <Button

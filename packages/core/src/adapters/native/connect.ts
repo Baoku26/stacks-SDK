@@ -1,10 +1,12 @@
 import { base64 } from '@scure/base';
 import { SbtcError, SbtcErrorCode } from '../../errors';
 import type { ConnectAdapter, WalletApp } from '../types';
+import { loadLinking } from './expo';
 
 /**
  * Native wallet connect via deep-links to Leather / Xverse (`expo-linking`,
- * imported dynamically to stay out of web bundles).
+ * loaded via `loadLinking()` from `./expo`: dynamic on web, static on native —
+ * see MEMORY.md → [ADAPTERS] native module loading).
  *
  * PROVISIONAL: the deep-link URL shapes and wallet schemes below are NOT yet
  * verified against the Leather/Xverse mobile apps — confirm before M5
@@ -43,7 +45,7 @@ export function createNativeConnect(options?: NativeConnectOptions): ConnectAdap
     callbackPath: string,
     failCode: SbtcErrorCode,
   ): Promise<Uint8Array> {
-    const Linking = await import('expo-linking');
+    const Linking = await loadLinking();
     const callbackPrefix = `${callbackScheme}://${callbackPath}`;
 
     return new Promise<Uint8Array>((resolve, reject) => {
@@ -119,7 +121,7 @@ export function createNativeConnect(options?: NativeConnectOptions): ConnectAdap
     },
 
     async getAvailableWallets() {
-      const Linking = await import('expo-linking');
+      const Linking = await loadLinking();
       const available: WalletApp[] = [];
       for (const wallet of KNOWN_WALLETS) {
         try {

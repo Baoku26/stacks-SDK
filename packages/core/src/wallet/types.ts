@@ -6,6 +6,13 @@ export interface Account {
   address: string;
   /** Bitcoin native-SegWit (p2wpkh) address — `bc1q…` / `tb1q…`. */
   btcAddress: string;
+  /**
+   * Compressed secp256k1 public key (33-byte, hex). v1 derives a single key for
+   * account index 0, used for BOTH the Stacks account and the BTC p2wpkh address,
+   * so this is the value to pass as `paymentPublicKey` (deposit) and
+   * `stacksPublicKey` (withdraw). Public, non-sensitive.
+   */
+  publicKey: string;
   /** Zero-based HD account index. */
   index: number;
 }
@@ -16,6 +23,12 @@ export interface WalletState {
   address: string | null;
   /** Bitcoin p2wpkh address, or `null` when no wallet is loaded. */
   btcAddress: string | null;
+  /**
+   * Compressed secp256k1 public key (hex) for account 0, or `null` when no wallet
+   * is loaded. Pass to `useSbtcDeposit` (`paymentPublicKey`) / `useSbtcWithdraw`
+   * (`stacksPublicKey`). Non-sensitive.
+   */
+  publicKey: string | null;
   /** `true` once the initial load / generate / restore has settled. */
   isLoaded: boolean;
   /** `true` when a wallet exists but its keys are not held in memory. */

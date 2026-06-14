@@ -7,11 +7,16 @@ import { SbtcErrorCode } from '../errors';
 const MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
+// Compressed secp256k1 public key (account 0) for the vector above — same key on
+// both networks (only the address encoding differs).
+const PUBLIC_KEY = '03d5d038bce81b3965314dba54f636f093c7dbdd6617cded013a53474fbccb100c';
+
 describe('deriveAccount', () => {
   it('derives the expected STX + BTC addresses on mainnet', async () => {
     const account = await deriveAccount(MNEMONIC, 'mainnet');
     expect(account.address).toBe('SPC5KHM41H6WHAST7MWWDD807YSPRQKJ69FSH54J');
     expect(account.btcAddress).toBe('bc1qrpvudpqvfhy2kw3a88rt2qplkdk9uu3jewnlle');
+    expect(account.publicKey).toBe(PUBLIC_KEY);
     expect(account.index).toBe(0);
   });
 
@@ -19,6 +24,7 @@ describe('deriveAccount', () => {
     const account = await deriveAccount(MNEMONIC, 'testnet');
     expect(account.address).toBe('STC5KHM41H6WHAST7MWWDD807YSPRQKJ68T330BQ');
     expect(account.btcAddress).toBe('tb1qrpvudpqvfhy2kw3a88rt2qplkdk9uu3jnggvy2');
+    expect(account.publicKey).toBe(PUBLIC_KEY);
   });
 
   it('throws INVALID_MNEMONIC for an invalid phrase', async () => {

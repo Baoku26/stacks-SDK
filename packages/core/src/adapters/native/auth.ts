@@ -1,9 +1,11 @@
 import type { AuthAdapter } from '../types';
+import { loadLocalAuthentication } from './expo';
 
 /**
  * Native authentication via `expo-local-authentication` (Face ID / Touch ID /
- * fingerprint, with the OS device-passcode fallback). Imported dynamically to
- * keep it out of web bundles.
+ * fingerprint, with the OS device-passcode fallback). Loaded via
+ * `loadLocalAuthentication()` (`./expo`): dynamic on web, static on native (see
+ * MEMORY.md → [ADAPTERS] native module loading).
  *
  * Returns booleans per the {@link AuthAdapter} contract — `withAuthGuard` turns a
  * `false` into `AUTH_FAILED` / an unavailable mechanism into `AUTH_UNAVAILABLE`.
@@ -11,7 +13,7 @@ import type { AuthAdapter } from '../types';
 export function createNativeAuth(): AuthAdapter {
   return {
     async isAvailable() {
-      const LocalAuthentication = await import('expo-local-authentication');
+      const LocalAuthentication = await loadLocalAuthentication();
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       // NOTE (M2): treats biometrics-enrolled as the availability signal. Devices
@@ -22,7 +24,7 @@ export function createNativeAuth(): AuthAdapter {
     },
 
     async prompt(reason) {
-      const LocalAuthentication = await import('expo-local-authentication');
+      const LocalAuthentication = await loadLocalAuthentication();
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: reason,
         // Allow the OS passcode fallback when biometrics fail/aren't enrolled.

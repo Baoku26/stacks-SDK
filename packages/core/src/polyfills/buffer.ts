@@ -1,9 +1,9 @@
 /**
  * Polyfill: `global.Buffer` and `global.process` (native only).
  *
- * `@peculiar/webcrypto` (crypto.ts) and several `@stacks/*` / `@scure/*` modules
- * capture `global.Buffer` at init, so it must exist before they evaluate — which
- * is why `polyfills/index.ts` runs this first. See MEMORY.md → [POLYFILLS].
+ * Several `@stacks/*` / `@scure/*` modules capture `global.Buffer` at init, so
+ * it must exist before they evaluate — which is why `polyfills/index.ts` runs
+ * this first. See MEMORY.md → [POLYFILLS].
  *
  * The work is exported as `applyBufferPolyfill()` rather than run on import, so
  * `polyfills/index.ts` can invoke it ONLY off the browser path. Idempotent

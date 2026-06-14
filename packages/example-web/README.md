@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# `@sbtc/sdk` — Web example (Next.js)
 
-## Getting Started
+A minimal Next.js (App Router) app that exercises [`@sbtc/sdk`](../core) on the web:
 
-First, run the development server:
+- **Local wallet** — generate / restore / lock / export / clear a self-custodial wallet (`useStacksWallet`). Keys live in encrypted `localStorage`; sensitive actions (export, clear) gate on WebAuthn or a passphrase fallback.
+- **Connected wallet** — connect a browser extension (Leather / Xverse) via Stacks Connect to get the funding account + public keys used for deposit / withdraw.
+- **Balances** — live testnet sBTC + STX balances (`useSbtcBalance`, `useStxBalance`) for the connected account (or the local wallet).
+- **Deposit** — BTC → sBTC (`useSbtcDeposit`), signing the PSBT through the connected extension.
+- **Withdraw** — sBTC → BTC (`useSbtcWithdraw`), signing the Stacks `initiate-withdrawal-request` through the connected extension.
+
+Runs against **Stacks testnet** (`SbtcProvider network="testnet"` in `app/providers.tsx`).
+
+## Run it
+
+From the monorepo root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm --filter @sbtc/sdk build      # the example consumes the built SDK
+pnpm --filter example-web dev      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+No environment variables are required — testnet API URLs are the SDK defaults. To target a different deployment, pass `apiConfig` to `SbtcProvider` in `app/providers.tsx` (e.g. a live testnet `sbtc-withdrawal` contract — see the SDK's `MEMORY.md` on testnet deployment churn).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Web setup note (required for any web consumer)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`@sbtc/sdk` ships a `NativeAdapter` that dynamically imports `expo-*` packages. Web bundlers (Turbopack / webpack) still **traverse** those dynamic imports and would try to parse `react-native`, which fails. `next.config.ts` aliases the native-only optional peers to an empty module:
 
-## Learn More
+```ts
+const NATIVE_ONLY = ['expo-secure-store', 'expo-local-authentication', 'expo-linking', 'react-native'];
+```
 
-To learn more about Next.js, take a look at the following resources:
+Any standalone web app using the SDK needs the same alias step (documented in the SDK's `platform-adapters` guide).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deposit / withdraw flow
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Click **Connect extension** → approve in Leather / Xverse. The app reads the returned Stacks + p2wpkh Bitcoin accounts (address + public key) from `@stacks/connect`'s `connect()`.
+2. Enter an amount (sats) and **Deposit** / **Withdraw**. The hooks build the transaction, hand it to the extension to sign, broadcast it, and poll Emily for confirmation.
+3. Watch `status` move through the lifecycle (`building → signing → broadcasting → pending → confirmed`).
 
-## Deploy on Vercel
+> **Testnet funds + an installed extension are required to complete a real deposit/withdraw.** Without them you can still exercise the local-wallet, balances, and wallet-discovery panels, and see the deposit/withdraw flows up to the signing handoff.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The app is a standard Next.js project and deploys to Vercel as-is. Build the SDK first (`pnpm --filter @sbtc/sdk build`) or include it in the monorepo build; the root `turbo` `build` pipeline handles ordering.
