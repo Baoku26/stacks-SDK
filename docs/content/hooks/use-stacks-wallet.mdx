@@ -7,7 +7,7 @@ title: useStacksWallet
 Self-custodial HD wallet (account 0). Keys live only in secure storage via the adapter — never in React state. SSR-safe: the first render is the unloaded state, and the persisted wallet is loaded in an effect on the client/native.
 
 ```tsx
-import { useStacksWallet } from '@sbtc/sdk';
+import { useStacksWallet } from '@baoku26/sbtc-sdk';
 
 const wallet = useStacksWallet();
 ```

@@ -35,7 +35,7 @@ export default defineConfig([
   {
     entry: {
       index: 'src/index.ts',
-      // Separate side-effect-only entry so `@sbtc/sdk/polyfills` can be imported
+      // Separate side-effect-only entry so `@baoku26/sbtc-sdk/polyfills` can be imported
       // first on React Native without pulling in the rest of the SDK. See MEMORY.md
       // [BUILD] tsup dual output and polyfills entry.
       polyfills: 'src/polyfills/index.ts',

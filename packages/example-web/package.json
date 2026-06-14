@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@sbtc/sdk": "workspace:*",
+    "@baoku26/sbtc-sdk": "workspace:*",
     "@stacks/connect": "^8.2.6",
     "next": "16.2.9",
     "react": "19.2.4",

@@ -11,7 +11,7 @@ import {
   WithdrawalStatus,
   SbtcError,
   type WalletApp,
-} from '@sbtc/sdk';
+} from '@baoku26/sbtc-sdk';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -171,7 +171,7 @@ export default function Home() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-          @sbtc/sdk — Web example
+          @baoku26/sbtc-sdk — Web example
         </h1>
         <p className="text-sm text-zinc-500">
           Network: <span className="font-mono">{network}</span> · adapter:{' '}

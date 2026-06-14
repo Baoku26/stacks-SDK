@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '@sbtc/sdk — Web example',
-  description: 'Stacks wallet demo on Next.js using @sbtc/sdk',
+  title: '@baoku26/sbtc-sdk — Web example',
+  description: 'Stacks wallet demo on Next.js using @baoku26/sbtc-sdk',
 };
 
 export default function RootLayout({

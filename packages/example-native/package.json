@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "@sbtc/sdk": "workspace:*",
+    "@baoku26/sbtc-sdk": "workspace:*",
     "expo": "~56.0.11",
     "expo-linking": "~56.0.14",
     "expo-local-authentication": "~56.0.4",

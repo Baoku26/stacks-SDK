@@ -1,11 +1,11 @@
 /**
- * `@sbtc/sdk/polyfills` — native-only Node shims for React Native (Hermes).
+ * `@baoku26/sbtc-sdk/polyfills` — native-only Node shims for React Native (Hermes).
  *
  * Import this as the VERY FIRST line of your native app entry, before anything
  * that may touch `Buffer` / `crypto` (e.g. `@stacks/*`):
  *
  *   // index.js (React Native / Expo)
- *   import '@sbtc/sdk/polyfills';
+ *   import '@baoku26/sbtc-sdk/polyfills';
  *   import 'expo-router/entry'; // or your root component registration
  *
  * On web this is a no-op (FR-2.3): the browser (or the consumer's bundler)

@@ -9,7 +9,7 @@ Read state from and send transactions to any Clarity contract with [`useStacksCo
 ## Read-only query
 
 ```tsx
-import { useStacksContract } from '@sbtc/sdk';
+import { useStacksContract } from '@baoku26/sbtc-sdk';
 import { standardPrincipalCV } from '@stacks/transactions';
 
 function Balance({ holder }: { holder: string }) {
@@ -36,7 +36,7 @@ The result is decoded from its Clarity value to a JS value, typed by the `<T>` y
 Provide a `sender` (address + public key) so the hook can build and pay for the transaction; `call()` signs (via the connect adapter or your `signTx`) and broadcasts, resolving the Stacks txid.
 
 ```tsx
-import { useStacksContract, useStacksWallet } from '@sbtc/sdk';
+import { useStacksContract, useStacksWallet } from '@baoku26/sbtc-sdk';
 import { uintCV, standardPrincipalCV, noneCV } from '@stacks/transactions';
 
 function Transfer() {
@@ -70,7 +70,7 @@ function Transfer() {
 If you build transactions yourself, read the pending nonce with `useNonce` and `refresh()` right before signing:
 
 ```tsx
-import { useNonce } from '@sbtc/sdk';
+import { useNonce } from '@baoku26/sbtc-sdk';
 
 const { nonce, refresh } = useNonce(address);
 ```

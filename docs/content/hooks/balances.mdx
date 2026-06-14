@@ -49,7 +49,7 @@ function useStxBalance(
 ## Example
 
 ```tsx
-import { useStacksWallet, useSbtcBalance, useStxBalance } from '@sbtc/sdk';
+import { useStacksWallet, useSbtcBalance, useStxBalance } from '@baoku26/sbtc-sdk';
 
 function Balances() {
   const { address } = useStacksWallet();
@@ -66,4 +66,4 @@ function Balances() {
 }
 ```
 
-Passing `null`/`undefined` as the address keeps the hook idle (no request) — convenient before a wallet exists. For raw-value formatting, see the `formatSats` / `formatBtc` / `satsToBtc` / `btcToSats` utilities exported from `@sbtc/sdk`.
+Passing `null`/`undefined` as the address keeps the hook idle (no request) — convenient before a wallet exists. For raw-value formatting, see the `formatSats` / `formatBtc` / `satsToBtc` / `btcToSats` utilities exported from `@baoku26/sbtc-sdk`.

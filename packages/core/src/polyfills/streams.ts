@@ -13,7 +13,7 @@
  *     stream: require.resolve('readable-stream'),
  *   };
  *
- * `readable-stream` is a runtime dependency of `@sbtc/sdk`, so the alias target
+ * `readable-stream` is a runtime dependency of `@baoku26/sbtc-sdk`, so the alias target
  * resolves without the consumer installing anything extra. On web, bundlers
  * provide their own `stream` shim or it is unneeded.
  *

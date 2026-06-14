@@ -7,7 +7,7 @@ title: Provider
 The root provider. It auto-detects the platform adapter, resolves API endpoints (defaults merged with your overrides), and supplies the context every hook reads. Mount it once, near the top of your tree.
 
 ```tsx
-import { SbtcProvider } from '@sbtc/sdk';
+import { SbtcProvider } from '@baoku26/sbtc-sdk';
 
 <SbtcProvider network="testnet">
   <App />
@@ -64,14 +64,14 @@ All endpoints must be **HTTPS** — an HTTP endpoint throws `NETWORK_SECURITY_ER
 Most apps only use the hooks, but you can read the resolved context directly:
 
 ```tsx
-import { useSbtcContext } from '@sbtc/sdk';
+import { useSbtcContext } from '@baoku26/sbtc-sdk';
 
 const { network, adapter, apiConfig } = useSbtcContext();
 ```
 
 ## Native polyfill guard
 
-On **native**, if `SbtcProvider` mounts before `@sbtc/sdk/polyfills` was imported (so `global.Buffer` is missing), it throws [`POLYFILL_NOT_INITIALIZED`](/security#errors). Import the polyfills as the first line of your entry file — see [Polyfills](/polyfills).
+On **native**, if `SbtcProvider` mounts before `@baoku26/sbtc-sdk/polyfills` was imported (so `global.Buffer` is missing), it throws [`POLYFILL_NOT_INITIALIZED`](/security#errors). Import the polyfills as the first line of your entry file — see [Polyfills](/polyfills).
 
 ## SSR
 

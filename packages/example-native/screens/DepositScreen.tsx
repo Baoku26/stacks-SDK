@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useStacksWallet, useSbtcDeposit } from '@sbtc/sdk';
+import { useStacksWallet, useSbtcDeposit } from '@baoku26/sbtc-sdk';
 import { Button, Card, ErrorText, Field, Muted, Row, Screen } from '../components/ui';
 
 /**

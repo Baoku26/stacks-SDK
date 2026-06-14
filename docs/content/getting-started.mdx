@@ -4,13 +4,13 @@ title: Getting Started
 
 # Getting Started
 
-`@sbtc/sdk` runs on **React Native / Expo** and **React (web)** from one install. You write the same hooks on both; the SDK detects the platform and wires the right adapter.
+`@baoku26/sbtc-sdk` runs on **React Native / Expo** and **React (web)** from one install. You write the same hooks on both; the SDK detects the platform and wires the right adapter.
 
 ## Install
 
 ```bash
-npm install @sbtc/sdk
-# or: pnpm add @sbtc/sdk / yarn add @sbtc/sdk
+npm install @baoku26/sbtc-sdk
+# or: pnpm add @baoku26/sbtc-sdk / yarn add @baoku26/sbtc-sdk
 ```
 
 On **web** there is no extra bundler configuration. On **React Native** there are two one-time setup steps — see [Polyfills](/polyfills).
@@ -20,7 +20,7 @@ On **web** there is no extra bundler configuration. On **React Native** there ar
 `SbtcProvider` selects the platform adapter, resolves API endpoints, and provides the context every hook reads.
 
 ```tsx
-import { SbtcProvider } from '@sbtc/sdk';
+import { SbtcProvider } from '@baoku26/sbtc-sdk';
 
 export function Root({ children }) {
   return <SbtcProvider network="testnet">{children}</SbtcProvider>;
@@ -35,7 +35,7 @@ The **very first import** of your native entry file must be the polyfills, befor
 
 ```ts
 // index.ts (Expo / React Native entry)
-import '@sbtc/sdk/polyfills'; // MUST be line 1
+import '@baoku26/sbtc-sdk/polyfills'; // MUST be line 1
 import { registerRootComponent } from 'expo';
 import App from './App';
 
@@ -49,7 +49,7 @@ This is a no-op on web. Details in [Polyfills](/polyfills).
 `useStacksWallet` manages a self-custodial HD wallet. Keys live only in secure storage (never in React state); the same code runs on both platforms.
 
 ```tsx
-import { useStacksWallet } from '@sbtc/sdk';
+import { useStacksWallet } from '@baoku26/sbtc-sdk';
 
 function Wallet() {
   const { address, btcAddress, generateWallet, lockWallet, error } = useStacksWallet();
@@ -78,7 +78,7 @@ Every hook returns errors via an `error` field (an [`SbtcError`](/security#error
 ## 3. Read balances
 
 ```tsx
-import { useSbtcBalance, useStxBalance } from '@sbtc/sdk';
+import { useSbtcBalance, useStxBalance } from '@baoku26/sbtc-sdk';
 
 function Balances({ address }: { address: string }) {
   const sbtc = useSbtcBalance(address);

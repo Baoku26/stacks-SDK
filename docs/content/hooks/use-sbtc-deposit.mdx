@@ -7,7 +7,7 @@ title: useSbtcDeposit
 Deposit **BTC → sBTC**. Builds the deposit with the official `sbtc` package, signs the PSBT (via the connect adapter or your override), broadcasts the Bitcoin transaction, notifies Emily, then polls deposit status in the background with backoff.
 
 ```tsx
-import { useSbtcDeposit } from '@sbtc/sdk';
+import { useSbtcDeposit } from '@baoku26/sbtc-sdk';
 
 const { deposit, status, txid, depositAddress, error, reset } = useSbtcDeposit(config);
 ```
@@ -49,7 +49,7 @@ When using a local self-custodial wallet, populate `stacksAddress` / `bitcoinAdd
 ## Example
 
 ```tsx
-import { useStacksWallet, useSbtcDeposit, DepositStatus } from '@sbtc/sdk';
+import { useStacksWallet, useSbtcDeposit, DepositStatus } from '@baoku26/sbtc-sdk';
 
 function Deposit() {
   const { address, btcAddress, publicKey } = useStacksWallet();

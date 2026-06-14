@@ -1,4 +1,4 @@
-// Public API barrel for @sbtc/sdk — exports exactly the symbols in PRD §9.1.
+// Public API barrel for @baoku26/sbtc-sdk — exports exactly the symbols in PRD §9.1.
 //
 // Internal modules are deliberately NOT exported: `detect.ts`, `ssr.ts`, the
 // `SbtcContext` object, `emily.ts`, `storage.ts`, adapter internals, and

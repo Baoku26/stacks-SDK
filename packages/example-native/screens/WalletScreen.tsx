@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useStacksWallet, useSbtcBalance, useStxBalance, SbtcError } from '@sbtc/sdk';
+import { useStacksWallet, useSbtcBalance, useStxBalance, SbtcError } from '@baoku26/sbtc-sdk';
 import { Button, Card, ErrorText, Muted, Row, Screen } from '../components/ui';
 
 export function WalletScreen() {

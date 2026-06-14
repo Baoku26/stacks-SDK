@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { SbtcProvider } from '@sbtc/sdk';
+import { SbtcProvider } from '@baoku26/sbtc-sdk';
 
 /**
  * Client-side SDK provider. `SbtcProvider` auto-detects the platform: it uses the

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SbtcProvider, NativeAdapter } from '@sbtc/sdk';
+import { SbtcProvider, NativeAdapter } from '@baoku26/sbtc-sdk';
 import { colors } from './components/ui';
 import { WalletScreen } from './screens/WalletScreen';
 import { DepositScreen } from './screens/DepositScreen';
@@ -30,7 +30,7 @@ export default function App() {
       <SafeAreaView style={styles.app}>
         <StatusBar style="light" />
         <View style={styles.header}>
-          <Text style={styles.title}>@sbtc/sdk — Native example</Text>
+          <Text style={styles.title}>@baoku26/sbtc-sdk — Native example</Text>
           <Text style={styles.subtitle}>{network}</Text>
         </View>
 

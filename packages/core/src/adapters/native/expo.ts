@@ -7,7 +7,7 @@
  * return annotations is a TYPE query (erased at build), so web bundlers
  * (webpack / Turbopack / Vite) never traverse into `expo-*` → `react-native`
  * (whose Flow syntax breaks web builds). This is what lets a web consumer install
- * `@sbtc/sdk` with NO bundler-alias step.
+ * `@baoku26/sbtc-sdk` with NO bundler-alias step.
  *
  * The `.native` sibling (`expo.native.ts`) provides the real STATIC imports for
  * React Native, selected via esbuild `resolveExtensions` in the tsup native build

@@ -12,7 +12,7 @@ A minimal Expo app: generate a self-custodial wallet, show balances, and deposit
 
 ```ts
 // index.ts
-import '@sbtc/sdk/polyfills'; // MUST be the first import
+import '@baoku26/sbtc-sdk/polyfills'; // MUST be the first import
 import { registerRootComponent } from 'expo';
 import App from './App';
 
@@ -38,7 +38,7 @@ See [Polyfills](/polyfills) for why both steps are required.
 
 ```tsx
 // App.tsx
-import { SbtcProvider, NativeAdapter } from '@sbtc/sdk';
+import { SbtcProvider, NativeAdapter } from '@baoku26/sbtc-sdk';
 import { WalletScreen } from './WalletScreen';
 
 export default function App() {
@@ -57,7 +57,7 @@ export default function App() {
 ```tsx
 // WalletScreen.tsx
 import { View, Text, Button } from 'react-native';
-import { useStacksWallet, useSbtcBalance, useStxBalance } from '@sbtc/sdk';
+import { useStacksWallet, useSbtcBalance, useStxBalance } from '@baoku26/sbtc-sdk';
 
 export function WalletScreen() {
   const { address, btcAddress, generateWallet, lockWallet, error } = useStacksWallet();

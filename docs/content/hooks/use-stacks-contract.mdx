@@ -7,7 +7,7 @@ title: useStacksContract
 Read-only queries and state-changing calls against any Clarity contract. Optionally runs a read-only query on mount; `call()` builds, signs, and broadcasts a contract-call transaction.
 
 ```tsx
-import { useStacksContract } from '@sbtc/sdk';
+import { useStacksContract } from '@baoku26/sbtc-sdk';
 
 const { data, isLoading, error, refetch, call } = useStacksContract(config);
 ```
@@ -45,7 +45,7 @@ function useStacksContract<T = unknown>(config: UseStacksContractConfig): UseSta
 ## Read-only example
 
 ```tsx
-import { useStacksContract } from '@sbtc/sdk';
+import { useStacksContract } from '@baoku26/sbtc-sdk';
 import { standardPrincipalCV } from '@stacks/transactions';
 
 function TokenName() {
@@ -63,7 +63,7 @@ function TokenName() {
 ## State-changing call
 
 ```tsx
-import { useStacksContract, useStacksWallet } from '@sbtc/sdk';
+import { useStacksContract, useStacksWallet } from '@baoku26/sbtc-sdk';
 import { uintCV, standardPrincipalCV } from '@stacks/transactions';
 
 function Transfer() {

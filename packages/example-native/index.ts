@@ -1,7 +1,7 @@
 // MUST be the first import in the app entry, before any module that may touch
 // Buffer / crypto (e.g. @stacks/*). On web this is a no-op. The failure mode is
 // silent and looks unrelated — see MEMORY.md → [POLYFILLS] import order.
-import '@sbtc/sdk/polyfills';
+import '@baoku26/sbtc-sdk/polyfills';
 
 import { registerRootComponent } from 'expo';
 

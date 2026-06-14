@@ -7,7 +7,7 @@ title: useSbtcWithdraw
 Withdraw **sBTC → BTC**. Builds an `initiate-withdrawal-request` contract call to the sBTC withdrawal contract, signs it (via the connect adapter or your override), broadcasts to the Stacks node, then polls Emily for the BTC release (~60 min).
 
 ```tsx
-import { useSbtcWithdraw } from '@sbtc/sdk';
+import { useSbtcWithdraw } from '@baoku26/sbtc-sdk';
 
 const { withdraw, status, stacksTxid, btcTxid, estimatedConfirmationMinutes, error, reset } =
   useSbtcWithdraw(config);
@@ -47,7 +47,7 @@ function useSbtcWithdraw(config: UseSbtcWithdrawConfig): UseSbtcWithdrawResult;
 ## Example
 
 ```tsx
-import { useStacksWallet, useSbtcWithdraw, WithdrawalStatus } from '@sbtc/sdk';
+import { useStacksWallet, useSbtcWithdraw, WithdrawalStatus } from '@baoku26/sbtc-sdk';
 
 function Withdraw() {
   const { address, publicKey } = useStacksWallet();

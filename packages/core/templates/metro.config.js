@@ -1,17 +1,17 @@
-// metro.config.js — template for using @sbtc/sdk on React Native / Expo.
+// metro.config.js — template for using @baoku26/sbtc-sdk on React Native / Expo.
 //
 // Copy this file into your project ROOT (next to package.json). It adds the one
-// bundler-level alias @sbtc/sdk needs on native: Node's `stream` module.
+// bundler-level alias @baoku26/sbtc-sdk needs on native: Node's `stream` module.
 // Transitive @stacks/@scure dependencies do `require('stream')`, and unlike
 // `Buffer` / `crypto` that cannot be fixed by a runtime global — module
 // resolution is Metro's job, not something on `globalThis`. `readable-stream`
-// ships as a dependency of @sbtc/sdk, so the alias target resolves with no extra
+// ships as a dependency of @baoku26/sbtc-sdk, so the alias target resolves with no extra
 // install on your side.
 //
 // IMPORTANT — this file does NOT replace the polyfill import. You must ALSO add,
 // as the FIRST line of your app entry (e.g. index.js), before any other import:
 //
-//   import '@sbtc/sdk/polyfills';
+//   import '@baoku26/sbtc-sdk/polyfills';
 //
 // ---------------------------------------------------------------------------
 // Expo (managed or bare): this extends `expo/metro-config`.

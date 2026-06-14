@@ -15,7 +15,7 @@ A Next.js (App Router) app that connects a wallet extension, shows balances, and
 ```tsx
 // app/providers.tsx
 'use client';
-import { SbtcProvider } from '@sbtc/sdk';
+import { SbtcProvider } from '@baoku26/sbtc-sdk';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return <SbtcProvider network="testnet">{children}</SbtcProvider>;
@@ -49,7 +49,7 @@ On web you have two paths:
 ```tsx
 'use client';
 import { useState } from 'react';
-import { useSbtcBalance, useStxBalance, useSbtcDeposit, DepositStatus } from '@sbtc/sdk';
+import { useSbtcBalance, useStxBalance, useSbtcDeposit, DepositStatus } from '@baoku26/sbtc-sdk';
 
 export function Dashboard({ account }: { account: { stxAddress: string; btcAddress: string; paymentPublicKey: string } }) {
   const sbtc = useSbtcBalance(account.stxAddress);

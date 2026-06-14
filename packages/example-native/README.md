@@ -1,6 +1,6 @@
-# `@sbtc/sdk` — Native example (Expo)
+# `@baoku26/sbtc-sdk` — Native example (Expo)
 
-A blank-TypeScript Expo app that exercises [`@sbtc/sdk`](../core) on React Native, with four tabs:
+A blank-TypeScript Expo app that exercises [`@baoku26/sbtc-sdk`](../core) on React Native, with four tabs:
 
 - **Wallet** — generate / lock / export / clear a self-custodial wallet (`useStacksWallet`). Keys live in the device Secure Enclave (`expo-secure-store`); export / clear gate on biometrics (`expo-local-authentication`). Plus live testnet sBTC + STX balances.
 - **Deposit** — BTC → sBTC (`useSbtcDeposit`).
@@ -15,7 +15,7 @@ From the monorepo root:
 
 ```bash
 pnpm install
-pnpm --filter @sbtc/sdk build      # the example consumes the built SDK
+pnpm --filter @baoku26/sbtc-sdk build      # the example consumes the built SDK
 pnpm --filter example-native start # then press i / a, or scan the QR in Expo Go
 ```
 
@@ -23,7 +23,7 @@ The three native peers are already installed (`expo-secure-store`, `expo-local-a
 
 ## Two setup pieces the SDK requires on native
 
-1. **Polyfills first.** `index.ts` has `import '@sbtc/sdk/polyfills';` as its **first line** — before anything that touches `Buffer` / `crypto`. The failure mode otherwise is a silent, unrelated-looking crash.
+1. **Polyfills first.** `index.ts` has `import '@baoku26/sbtc-sdk/polyfills';` as its **first line** — before anything that touches `Buffer` / `crypto`. The failure mode otherwise is a silent, unrelated-looking crash.
 2. **Metro `stream` alias.** `metro.config.js` aliases Node's `stream` → `readable-stream` (transitive `@stacks` / `@scure` deps need it on Hermes).
 
 The deep-link callback scheme is set in two matching places: `app.json` (`"scheme": "sbtcsdk"`) and `App.tsx` (`new NativeAdapter({ callbackScheme: 'sbtcsdk' })`).

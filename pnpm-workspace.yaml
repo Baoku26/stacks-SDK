@@ -2,7 +2,7 @@ packages:
   - 'packages/*'
   - 'docs'
 
-# @sbtc/sdk's native peers (react-native, expo-secure-store, expo-local-authentication)
+# @baoku26/sbtc-sdk's native peers (react-native, expo-secure-store, expo-local-authentication)
 # and web peer (@stacks/connect) are optional — do not auto-install them into the
 # core dev install. The example apps install the peers they actually need.
 autoInstallPeers: false

@@ -26,19 +26,19 @@ jobs:
       # Install ONLY the SDK package and its (pure-JS) deps. The example apps
       # (Expo/Next) pull platform-native binaries and are integration references
       # validated at M8 — they are deliberately out of the M1 SDK gate.
-      - name: Install (@sbtc/sdk only)
-        run: pnpm install --frozen-lockfile --filter @sbtc/sdk
+      - name: Install (@baoku26/sbtc-sdk only)
+        run: pnpm install --frozen-lockfile --filter @baoku26/sbtc-sdk
 
       # Pipeline order per TASKS.md T005: typecheck → lint → test → coverage → size-check.
       # turbo --filter scopes to core and no-ops tasks core doesn't define yet (e.g. tests).
       - name: Typecheck
-        run: pnpm exec turbo run typecheck --filter=@sbtc/sdk
+        run: pnpm exec turbo run typecheck --filter=@baoku26/sbtc-sdk
 
       - name: Lint
-        run: pnpm exec turbo run lint --filter=@sbtc/sdk
+        run: pnpm exec turbo run lint --filter=@baoku26/sbtc-sdk
 
       - name: Test (with coverage)
-        run: pnpm exec turbo run test:coverage --filter=@sbtc/sdk
+        run: pnpm exec turbo run test:coverage --filter=@baoku26/sbtc-sdk
 
       - name: Bundle size
-        run: pnpm exec turbo run size-check --filter=@sbtc/sdk
+        run: pnpm exec turbo run size-check --filter=@baoku26/sbtc-sdk

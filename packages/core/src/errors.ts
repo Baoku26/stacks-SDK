@@ -1,12 +1,12 @@
 /**
- * Error codes for every failure `@sbtc/sdk` surfaces — one per row of PRD §9.3.
+ * Error codes for every failure `@baoku26/sbtc-sdk` surfaces — one per row of PRD §9.3.
  *
  * Always reference the enum member, never the raw string (CLAUDE.md → Coding
  * Rules: "Enums for all status strings. No raw string literals in logic
  * branches."). The string values are stable and safe to log.
  */
 export enum SbtcErrorCode {
-  /** Native: `SbtcProvider` was mounted before `@sbtc/sdk/polyfills` was imported. */
+  /** Native: `SbtcProvider` was mounted before `@baoku26/sbtc-sdk/polyfills` was imported. */
   POLYFILL_NOT_INITIALIZED = 'POLYFILL_NOT_INITIALIZED',
   /** A hook was used before a wallet was generated or restored. */
   WALLET_NOT_FOUND = 'WALLET_NOT_FOUND',
@@ -54,7 +54,7 @@ const DOCS_URL = 'https://github.com/Baoku26/stacks-SDK#readme';
  * a message for every code (adding a code without a message is a type error).
  */
 const DEFAULT_MESSAGES: Record<SbtcErrorCode, string> = {
-  [SbtcErrorCode.POLYFILL_NOT_INITIALIZED]: `Native polyfills are not initialized. Import "@sbtc/sdk/polyfills" as the very first line of your app entry file, before any other import. See ${DOCS_URL}`,
+  [SbtcErrorCode.POLYFILL_NOT_INITIALIZED]: `Native polyfills are not initialized. Import "@baoku26/sbtc-sdk/polyfills" as the very first line of your app entry file, before any other import. See ${DOCS_URL}`,
   [SbtcErrorCode.WALLET_NOT_FOUND]:
     'No wallet found. Call generateWallet() or restoreWallet() first.',
   [SbtcErrorCode.WALLET_LOCKED]: 'Wallet is locked. Unlock it before performing this operation.',

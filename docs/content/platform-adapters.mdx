@@ -44,7 +44,7 @@ Per-platform builds also keep bundles lean: `NativeAdapter` is never bundled int
 Pass your own `adapter` to `SbtcProvider` to integrate an HSM, a hardware wallet, or a custom keystore. Implement the `PlatformAdapter` interface:
 
 ```tsx
-import { SbtcProvider, type PlatformAdapter } from '@sbtc/sdk';
+import { SbtcProvider, type PlatformAdapter } from '@baoku26/sbtc-sdk';
 
 const myAdapter: PlatformAdapter = {
   platform: 'web',

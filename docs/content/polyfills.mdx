@@ -4,17 +4,17 @@ title: Polyfills (Native)
 
 # Polyfills (React Native)
 
-React Native (Hermes) lacks several globals the Stacks/Bitcoin libraries assume — `Buffer`, a secure `crypto.getRandomValues`, and Node's `stream`. `@sbtc/sdk` ships the fixes; you wire them up with **two one-time steps**. Both are **no-ops on web** — web consumers can skip this page entirely.
+React Native (Hermes) lacks several globals the Stacks/Bitcoin libraries assume — `Buffer`, a secure `crypto.getRandomValues`, and Node's `stream`. `@baoku26/sbtc-sdk` ships the fixes; you wire them up with **two one-time steps**. Both are **no-ops on web** — web consumers can skip this page entirely.
 
 > This is the single most common cause of a broken React Native setup. If you see a crash that mentions `Buffer`, `getRandomValues`, `stream`, or `POLYFILL_NOT_INITIALIZED`, it's almost always one of the two steps below.
 
 ## 1. Import the polyfills first
 
-The **first line** of your native entry file must import `@sbtc/sdk/polyfills`, before any module that may touch `Buffer` / `crypto` (e.g. `@stacks/*`):
+The **first line** of your native entry file must import `@baoku26/sbtc-sdk/polyfills`, before any module that may touch `Buffer` / `crypto` (e.g. `@stacks/*`):
 
 ```ts
 // index.ts (Expo / React Native entry — `main` in package.json)
-import '@sbtc/sdk/polyfills'; // ← MUST be the first import
+import '@baoku26/sbtc-sdk/polyfills'; // ← MUST be the first import
 import { registerRootComponent } from 'expo';
 import App from './App';
 
@@ -43,7 +43,7 @@ config.resolver.extraNodeModules = {
 module.exports = config;
 ```
 
-A ready-to-copy version ships at `@sbtc/sdk`'s `templates/metro.config.js`.
+A ready-to-copy version ships at `@baoku26/sbtc-sdk`'s `templates/metro.config.js`.
 
 ## What is NOT polyfilled
 

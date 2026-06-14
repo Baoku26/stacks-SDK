@@ -1,6 +1,6 @@
 name: Publish
 
-# Publishes @sbtc/sdk to npm when a version tag is pushed, e.g. `git tag v1.0.0 && git push --tags`.
+# Publishes @baoku26/sbtc-sdk to npm when a version tag is pushed, e.g. `git tag v1.0.0 && git push --tags`.
 on:
   push:
     tags:
@@ -30,9 +30,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @sbtc/sdk build
+        run: pnpm --filter @baoku26/sbtc-sdk build
 
       - name: Publish to npm
-        run: pnpm --filter @sbtc/sdk publish --no-git-checks --access public --provenance
+        run: pnpm --filter @baoku26/sbtc-sdk publish --no-git-checks --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

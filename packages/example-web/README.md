@@ -1,6 +1,6 @@
-# `@sbtc/sdk` — Web example (Next.js)
+# `@baoku26/sbtc-sdk` — Web example (Next.js)
 
-A minimal Next.js (App Router) app that exercises [`@sbtc/sdk`](../core) on the web:
+A minimal Next.js (App Router) app that exercises [`@baoku26/sbtc-sdk`](../core) on the web:
 
 - **Local wallet** — generate / restore / lock / export / clear a self-custodial wallet (`useStacksWallet`). Keys live in encrypted `localStorage`; sensitive actions (export, clear) gate on WebAuthn or a passphrase fallback.
 - **Connected wallet** — connect a browser extension (Leather / Xverse) via Stacks Connect to get the funding account + public keys used for deposit / withdraw.
@@ -16,7 +16,7 @@ From the monorepo root:
 
 ```bash
 pnpm install
-pnpm --filter @sbtc/sdk build      # the example consumes the built SDK
+pnpm --filter @baoku26/sbtc-sdk build      # the example consumes the built SDK
 pnpm --filter example-web dev      # http://localhost:3000
 ```
 
@@ -24,7 +24,7 @@ No environment variables are required — testnet API URLs are the SDK defaults.
 
 ## Web setup note
 
-No bundler configuration is required. `@sbtc/sdk`'s web build contains no runtime `import('expo-*')` — the `NativeAdapter`'s native-module loaders are type-only on web — so Turbopack / webpack never traverse into `expo-*` or `react-native`. `next.config.ts` is empty.
+No bundler configuration is required. `@baoku26/sbtc-sdk`'s web build contains no runtime `import('expo-*')` — the `NativeAdapter`'s native-module loaders are type-only on web — so Turbopack / webpack never traverse into `expo-*` or `react-native`. `next.config.ts` is empty.
 
 > Earlier versions required aliasing the native-only peers (`expo-*`, `react-native`) to an empty module. That step is no longer needed as of the SDK's `react-native` export condition + web-graph-isolation fix.
 
@@ -38,4 +38,4 @@ No bundler configuration is required. `@sbtc/sdk`'s web build contains no runtim
 
 ## Deploy
 
-The app is a standard Next.js project and deploys to Vercel as-is. Build the SDK first (`pnpm --filter @sbtc/sdk build`) or include it in the monorepo build; the root `turbo` `build` pipeline handles ordering.
+The app is a standard Next.js project and deploys to Vercel as-is. Build the SDK first (`pnpm --filter @baoku26/sbtc-sdk build`) or include it in the monorepo build; the root `turbo` `build` pipeline handles ordering.

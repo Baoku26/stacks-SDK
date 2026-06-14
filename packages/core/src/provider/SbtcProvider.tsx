@@ -7,7 +7,7 @@ import { SbtcContext } from './context';
 import type { SbtcContextValue, SbtcProviderProps } from './types';
 
 /**
- * Root provider for `@sbtc/sdk`. Auto-detects the platform adapter (unless one is
+ * Root provider for `@baoku26/sbtc-sdk`. Auto-detects the platform adapter (unless one is
  * passed), resolves API endpoints, and provides the context every hook reads.
  *
  *   <SbtcProvider network="mainnet">{children}</SbtcProvider>
